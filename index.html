@@ -87,7 +87,7 @@
 
             // ジャンプ処理
             if (keys["z"]) {
-                if (player.onGround && jumpKeyReleased) {
+                if (player.onGround) {
                     player.dy = -JUMP_POWER;
                     player.onGround = false;
                     canDoubleJump = true;
