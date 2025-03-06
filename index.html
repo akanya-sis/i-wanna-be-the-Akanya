@@ -46,17 +46,17 @@
         const GRAVITY = 0.5;
         const MOVE_SPEED = 5;
         const JUMP_POWER = 10;
-        const FLOOR_Y = canvas.height - 64;
+        const FLOOR_Y = canvas.height;
 
         // プレイヤーのオブジェクト
         const player = {
             x: 100,
-            y: FLOOR_Y,
+            y: FLOOR_Y - 64,
             width: 32,
             height: 64,
             dx: 0,
             dy: 0,
-            onGround: false,
+            onGround: true,
         };
 
         const keys = {};
@@ -67,7 +67,7 @@
             if (event.key === "z" && player.onGround) {
                 player.dy = -JUMP_POWER;
                 player.onGround = false;
-                console.log("player.dy:",player.dy);
+                console.log("player.dy:", player.dy);
             }
         });
 
@@ -92,13 +92,9 @@
             player.x += player.dx;
             player.y += player.dy;
 
-            console.log("player.y:",player.y);
-            console.log("player.height:",player.height);
-            console.log("FLOOR_Y:",FLOOR_Y);
-
             // 地面の衝突判定
             if (player.y + player.height >= FLOOR_Y) {
-                player.y = FLOOR_Y;
+                player.y = FLOOR_Y - player.height;
                 player.dy = 0;
                 player.onGround = true;
             }
