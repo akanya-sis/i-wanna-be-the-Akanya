@@ -64,6 +64,8 @@
         // キー入力の管理
         document.addEventListener("keydown", (event) => {
             keys[event.key] = true;
+            console.log(event.key === "z");
+            console.log(event.key === "z" && player.onGround);
             if (event.key === "z" && player.onGround) {
                 player.dy = -JUMP_POWER;
                 player.onGround = false;
