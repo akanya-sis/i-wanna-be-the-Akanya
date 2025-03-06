@@ -38,6 +38,8 @@
         const debugPanel = document.getElementById("debugPanel");
 
         let debugMode = true; // デバッグモードの切り替え
+        let doubleJumpEnabled = true; // 二段ジャンプの切り替え
+        let canDoubleJump = false;
 
         canvas.width = 1024;
         canvas.height = 576;
@@ -80,9 +82,15 @@
             }
 
             // ジャンプ処理
-            if (keys["z"] && player.onGround) {
-                player.dy = -JUMP_POWER;
-                player.onGround = false;
+            if (keys["z"]) {
+                if (player.onGround) {
+                    player.dy = -JUMP_POWER;
+                    player.onGround = false;
+                    canDoubleJump = true;
+                } else if (doubleJumpEnabled && canDoubleJump) {
+                    player.dy = -JUMP_POWER;
+                    canDoubleJump = false;
+                }
             }
 
             // 重力
@@ -97,6 +105,7 @@
                 player.y = FLOOR_Y - player.height;
                 player.dy = 0;
                 player.onGround = true;
+                canDoubleJump = false;
             }
         }
 
@@ -117,6 +126,7 @@
                     dx: ${player.dx.toFixed(2)}<br>
                     dy: ${player.dy.toFixed(2)}<br>
                     onGround: ${player.onGround}<br>
+                    canDoubleJump: ${canDoubleJump}<br>
                     keys: ${JSON.stringify(keys)}
                 `;
             } else {
