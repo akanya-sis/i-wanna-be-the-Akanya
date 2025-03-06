@@ -16,13 +16,28 @@
         canvas {
             background-color: white;
         }
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            display: none;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <div id="debugPanel" class="debug-panel"></div>
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
+        const debugPanel = document.getElementById("debugPanel");
+        
+        let debugMode = true; // デバッグモードの切り替え
 
         canvas.width = 1024;
         canvas.height = 576;
@@ -92,9 +107,26 @@
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
+        function updateDebugPanel() {
+            if (debugMode) {
+                debugPanel.style.display = "block";
+                debugPanel.innerHTML = `
+                    x: ${player.x.toFixed(2)}<br>
+                    y: ${player.y.toFixed(2)}<br>
+                    dx: ${player.dx.toFixed(2)}<br>
+                    dy: ${player.dy.toFixed(2)}<br>
+                    onGround: ${player.onGround}<br>
+                    keys: ${JSON.stringify(keys)}
+                `;
+            } else {
+                debugPanel.style.display = "none";
+            }
+        }
+
         function gameLoop() {
             update();
             draw();
+            updateDebugPanel();
             requestAnimationFrame(gameLoop);
         }
 
