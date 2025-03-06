@@ -40,7 +40,7 @@
         let debugMode = true; // デバッグモードの切り替え
         let doubleJumpEnabled = true; // 二段ジャンプの切り替え
         let canDoubleJump = false;
-        let jumpKeyReleased = true; // ジャンプキーが離されたか
+        let jumpKeyReleased = true;
 
         canvas.width = 1024;
         canvas.height = 576;
@@ -50,19 +50,38 @@
         const MOVE_SPEED = 5;
         const JUMP_POWER = 10;
         const FLOOR_Y = canvas.height;
+        const BLOCK_SIZE = 16;
 
         // プレイヤーのオブジェクト
         const player = {
             x: 100,
             y: FLOOR_Y - 64,
             width: 16,
-            height: 32,
+            height: 64,
             dx: 0,
             dy: 0,
             onGround: true,
         };
 
         const keys = {};
+
+        const stage = {
+            blocks:[
+                {kind:1,x:0,y:35,collision:0},
+                {kind:1,x:1,y:35,collision:0},
+                {kind:1,x:2,y:35,collision:0},
+                {kind:1,x:3,y:35,collision:0},
+                {kind:1,x:4,y:35,collision:0},
+                {kind:1,x:5,y:35,collision:0},
+                {kind:1,x:6,y:35,collision:0},
+                {kind:1,x:7,y:35,collision:0},
+                {kind:1,x:8,y:35,collision:0},
+                {kind:1,x:9,y:35,collision:0},
+                {kind:1,x:10,y:35,collision:0},
+                {kind:2,x:11,y:35,collision:0},
+                {kind:3,x:12,y:35,collision:0}
+            ]
+        };
 
         document.addEventListener("keydown", (event) => {
             keys[event.key] = true;
@@ -111,12 +130,34 @@
                 player.y = FLOOR_Y - player.height;
                 player.dy = 0;
                 player.onGround = true;
-                canDoubleJump = false;
+                canDoubleJump = true;
             }
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // プレイヤー描画 (赤い四角)
+            ctx.fillStyle = "red";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // ブロック描画
+            stage.blocks.forEach(block => {
+                switch (block.kind) {
+                    case 1:
+                        ctx.fillStyle = "brown";
+                        break;
+                    case 2:
+                        ctx.fillStyle = "blue";
+                        break;
+                    case 3:
+                        ctx.fillStyle = "green";
+                        break;
+                    default:
+                        ctx.fillStyle = "gray";
+                }
+                ctx.fillRect(block.x * 16, canvas.height - (block.y + 1) * 16, 16, 16);
+            });
 
             // プレイヤー描画 (赤い四角)
             ctx.fillStyle = "red";
@@ -133,7 +174,6 @@
                     dy: ${player.dy.toFixed(2)}<br>
                     onGround: ${player.onGround}<br>
                     canDoubleJump: ${canDoubleJump}<br>
-                    jumpKeyReleased: ${jumpKeyReleased}<br>
                     keys: ${JSON.stringify(keys)}
                 `;
             } else {
