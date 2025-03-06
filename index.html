@@ -40,6 +40,7 @@
         let debugMode = true; // デバッグモードの切り替え
         let doubleJumpEnabled = true; // 二段ジャンプの切り替え
         let canDoubleJump = false;
+        let jumpKeyReleased = true; // ジャンプキーが離されたか
 
         canvas.width = 1024;
         canvas.height = 576;
@@ -69,6 +70,9 @@
 
         document.addEventListener("keyup", (event) => {
             keys[event.key] = false;
+            if (event.key === "z") {
+                jumpKeyReleased = true;
+            }
         });
 
         function update() {
@@ -83,13 +87,15 @@
 
             // ジャンプ処理
             if (keys["z"]) {
-                if (player.onGround) {
+                if (player.onGround && jumpKeyReleased) {
                     player.dy = -JUMP_POWER;
                     player.onGround = false;
                     canDoubleJump = true;
-                } else if (doubleJumpEnabled && canDoubleJump) {
+                    jumpKeyReleased = false;
+                } else if (doubleJumpEnabled && canDoubleJump && jumpKeyReleased) {
                     player.dy = -JUMP_POWER;
                     canDoubleJump = false;
+                    jumpKeyReleased = false;
                 }
             }
 
@@ -127,6 +133,7 @@
                     dy: ${player.dy.toFixed(2)}<br>
                     onGround: ${player.onGround}<br>
                     canDoubleJump: ${canDoubleJump}<br>
+                    jumpKeyReleased: ${jumpKeyReleased}<br>
                     keys: ${JSON.stringify(keys)}
                 `;
             } else {
