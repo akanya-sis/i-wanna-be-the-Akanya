@@ -61,13 +61,8 @@
 
         const keys = {};
 
-        // キー入力の管理
         document.addEventListener("keydown", (event) => {
             keys[event.key] = true;
-            if (event.key === "z" && player.onGround) {
-                player.dy = -JUMP_POWER;
-                player.onGround = false;
-            }
         });
 
         document.addEventListener("keyup", (event) => {
@@ -82,6 +77,12 @@
                 player.dx = MOVE_SPEED;
             } else {
                 player.dx = 0;
+            }
+
+            // ジャンプ処理
+            if (keys["z"] && player.onGround) {
+                player.dy = -JUMP_POWER;
+                player.onGround = false;
             }
 
             // 重力
