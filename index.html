@@ -64,11 +64,10 @@
         // キー入力の管理
         document.addEventListener("keydown", (event) => {
             keys[event.key] = true;
-            console.log(event.key === "z");
-            console.log(event.key === "z" && player.onGround);
             if (event.key === "z" && player.onGround) {
                 player.dy = -JUMP_POWER;
                 player.onGround = false;
+                console.log("player.dy:",player.dy);
             }
         });
 
@@ -92,6 +91,10 @@
             // 移動適用
             player.x += player.dx;
             player.y += player.dy;
+
+            console.log("player.y:",player.y);
+            console.log("player.height:",player.height);
+            console.log("FLOOR_Y:",FLOOR_Y);
 
             // 地面の衝突判定
             if (player.y + player.height >= FLOOR_Y) {
