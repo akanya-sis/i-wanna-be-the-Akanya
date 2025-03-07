@@ -2,6 +2,7 @@ function triggerDeathEffect() {
     isGameOver = true;
     showPlayer = false;
     gameOverPanel.style.display = "block";
+    gameOverSound.play();
     deathStartTime = performance.now();
     for (let i = 0; i < PARTICLE_COUNT; i++) {
         const angle = Math.random() * Math.PI * 2;
