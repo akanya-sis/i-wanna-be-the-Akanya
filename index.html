@@ -37,25 +37,22 @@
         const ctx = canvas.getContext("2d");
         const debugPanel = document.getElementById("debugPanel");
 
-        let debugMode = true; // デバッグモードの切り替え
-        let doubleJumpEnabled = true; // 二段ジャンプの切り替え
+        let debugMode = true;
+        let doubleJumpEnabled = true;
         let canDoubleJump = false;
         let jumpKeyReleased = true;
 
         canvas.width = 1024;
         canvas.height = 576;
 
-        // ゲームの基本設定
         const GRAVITY = 0.5;
         const MOVE_SPEED = 5;
         const JUMP_POWER = 15;
-        const FLOOR_Y = canvas.height;
         const BLOCK_SIZE = 16;
 
-        // プレイヤーのオブジェクト
         const player = {
             x: 100,
-            y: FLOOR_Y - 64,
+            y: canvas.height - 64,
             width: 16,
             height: 32,
             dx: 0,
@@ -78,33 +75,56 @@
                 {kind:1,x:8,y:0,collision:0},
                 {kind:1,x:9,y:0,collision:0},
                 {kind:1,x:10,y:0,collision:0},
+                {kind:1,x:10,y:1,collision:0},
+                {kind:1,x:10,y:2,collision:0},
+                {kind:1,x:10,y:3,collision:0},
+                {kind:1,x:11,y:3,collision:0},
+                {kind:1,x:12,y:3,collision:0},
                 {kind:2,x:11,y:0,collision:0},
                 {kind:3,x:12,y:0,collision:0}
             ]
         };
 
-        document.addEventListener("keydown", (event) => {
-            keys[event.key] = true;
-        });
-
+        document.addEventListener("keydown", (event) => { keys[event.key] = true; });
         document.addEventListener("keyup", (event) => {
             keys[event.key] = false;
-            if (event.key === "z") {
-                jumpKeyReleased = true;
-            }
+            if (event.key === "z") jumpKeyReleased = true;
         });
 
-        function update() {
-            // 横移動
-            if (keys["ArrowLeft"]) {
-                player.dx = -MOVE_SPEED;
-            } else if (keys["ArrowRight"]) {
-                player.dx = MOVE_SPEED;
-            } else {
-                player.dx = 0;
-            }
+        function checkCollision(px, py, pw, ph, bx, by, bs) {
+            return px < bx + bs && px + pw > bx && py < by + bs && py + ph > by;
+        }
 
-            // ジャンプ処理
+        function handleBlockCollisions() {
+            player.onGround = false;
+            stage.blocks.forEach(block => {
+                if (block.collision === 2) return;
+                const bx = block.x * BLOCK_SIZE;
+                const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
+
+                if (checkCollision(player.x, player.y + player.dy, player.width, player.height, bx, by, BLOCK_SIZE)) {
+                    if (player.dy > 0 && player.y + player.height <= by + player.dy) {
+                        player.y = by - player.height;
+                        player.dy = 0;
+                        player.onGround = true;
+                        canDoubleJump = true;
+                    } else if (block.collision === 0 && player.dy < 0 && player.y >= by + BLOCK_SIZE) {
+                        player.y = by + BLOCK_SIZE;
+                        player.dy = 0;
+                    }
+                }
+
+                if (block.collision === 0 && checkCollision(player.x + player.dx, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
+                    if (player.dx > 0) player.x = bx - player.width;
+                    if (player.dx < 0) player.x = bx + BLOCK_SIZE;
+                    player.dx = 0;
+                }
+            });
+        }
+
+        function update() {
+            player.dx = keys["ArrowLeft"] ? -MOVE_SPEED : keys["ArrowRight"] ? MOVE_SPEED : 0;
+
             if (keys["z"]) {
                 if (player.onGround) {
                     player.dy = -JUMP_POWER;
@@ -118,16 +138,13 @@
                 }
             }
 
-            // 重力
             player.dy += GRAVITY;
-
-            // 移動適用
+            handleBlockCollisions();
             player.x += player.dx;
             player.y += player.dy;
 
-            // 地面の衝突判定 (落下中のみ)
-            if (player.dy >= 0 && player.y + player.height >= FLOOR_Y) {
-                player.y = FLOOR_Y - player.height;
+            if (player.y + player.height >= canvas.height) {
+                player.y = canvas.height - player.height;
                 player.dy = 0;
                 player.onGround = true;
                 canDoubleJump = true;
@@ -136,56 +153,16 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // プレイヤー描画 (赤い四角)
-            ctx.fillStyle = "red";
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // ブロック描画
             stage.blocks.forEach(block => {
-                switch (block.kind) {
-                    case 1:
-                        ctx.fillStyle = "brown";
-                        break;
-                    case 2:
-                        ctx.fillStyle = "blue";
-                        break;
-                    case 3:
-                        ctx.fillStyle = "green";
-                        break;
-                    default:
-                        ctx.fillStyle = "gray";
-                }
-                ctx.fillRect(block.x * 16, canvas.height - (block.y + 1) * 16, 16, 16);
+                ctx.fillStyle = block.kind === 1 ? "brown" : block.kind === 2 ? "blue" : block.kind === 3 ? "green" : "gray";
+                ctx.fillRect(block.x * BLOCK_SIZE, canvas.height - (block.y + 1) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
             });
-
-            // プレイヤー描画 (赤い四角)
             ctx.fillStyle = "red";
             ctx.fillRect(player.x, player.y, player.width, player.height);
-        }
-
-        function updateDebugPanel() {
-            if (debugMode) {
-                debugPanel.style.display = "block";
-                debugPanel.innerHTML = `
-                    x: ${player.x.toFixed(2)}<br>
-                    y: ${player.y.toFixed(2)}<br>
-                    dx: ${player.dx.toFixed(2)}<br>
-                    dy: ${player.dy.toFixed(2)}<br>
-                    onGround: ${player.onGround}<br>
-                    canDoubleJump: ${canDoubleJump}<br>
-                    keys: ${JSON.stringify(keys)}
-                `;
-            } else {
-                debugPanel.style.display = "none";
-            }
         }
 
         function gameLoop() {
-            update();
-            draw();
-            updateDebugPanel();
-            requestAnimationFrame(gameLoop);
+            update(); draw(); requestAnimationFrame(gameLoop);
         }
 
         gameLoop();
