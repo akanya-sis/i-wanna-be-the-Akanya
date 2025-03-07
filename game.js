@@ -47,7 +47,7 @@ document.addEventListener('keyup', (e) => {
 const player = {
     x: 50,
     y: 400,
-    width: 32,
+    width: 16,
     height: 32,
     dx: 0,
     dy: 0,
@@ -59,25 +59,45 @@ const deathParticles = [];
 // Example stage setup (you'll need to adapt this to your game's needs)
 const stage = {
     blocks: [
-        // Bottom platform
-        { x: 0, y: 0, kind: 1, collision: 0 },
-        { x: 1, y: 0, kind: 1, collision: 0 },
-        { x: 2, y: 0, kind: 1, collision: 0 },
-        { x: 3, y: 0, kind: 1, collision: 0 },
-        { x: 4, y: 0, kind: 1, collision: 0 },
-        { x: 5, y: 0, kind: 1, collision: 0 },
-        { x: 6, y: 0, kind: 1, collision: 0 },
-        { x: 7, y: 0, kind: 1, collision: 0 },
-        { x: 8, y: 0, kind: 1, collision: 0 },
-        { x: 9, y: 0, kind: 1, collision: 0 },
-        
-        // Obstacle
-        { x: 12, y: 1, kind: 4, collision: 0 },
-        
-        // Platform
-        { x: 15, y: 3, kind: 1, collision: 0 },
-        { x: 16, y: 3, kind: 1, collision: 0 },
-        { x: 17, y: 3, kind: 1, collision: 0 }
+        {kind:1,x:0,y:0,collision:0},
+        {kind:1,x:1,y:0,collision:0},
+        {kind:1,x:2,y:0,collision:0},
+        {kind:1,x:3,y:0,collision:0},
+        {kind:1,x:4,y:0,collision:0},
+        {kind:1,x:5,y:0,collision:0},
+        {kind:1,x:6,y:0,collision:0},
+        {kind:1,x:7,y:0,collision:0},
+        {kind:1,x:8,y:0,collision:0},
+        {kind:1,x:9,y:0,collision:0},
+        {kind:1,x:10,y:0,collision:0},
+        {kind:1,x:10,y:1,collision:0},
+        {kind:1,x:10,y:2,collision:0},
+        {kind:1,x:10,y:3,collision:0},
+        {kind:1,x:11,y:3,collision:0},
+        {kind:1,x:12,y:3,collision:0},
+        {kind:1,x:13,y:3,collision:0},
+        {kind:1,x:14,y:3,collision:0},
+        {kind:1,x:15,y:3,collision:0},
+        {kind:1,x:15,y:3,collision:0},
+        {kind:1,x:16,y:3,collision:0},
+        {kind:1,x:17,y:3,collision:0},
+        {kind:1,x:18,y:3,collision:0},
+        {kind:1,x:19,y:3,collision:0},
+        {kind:2,x:15,y:6,collision:1},
+        {kind:2,x:16,y:6,collision:1},
+        {kind:2,x:17,y:6,collision:1},
+        {kind:2,x:18,y:6,collision:1},
+        {kind:2,x:19,y:6,collision:1},
+        {kind:3,x:15,y:4,collision:2},
+        {kind:3,x:16,y:4,collision:2},
+        {kind:3,x:17,y:4,collision:2},
+        {kind:3,x:18,y:4,collision:2},
+        {kind:3,x:19,y:4,collision:2},
+        // 即死ブロック
+        {kind:4,x:20,y:0,collision:0},
+        {kind:4,x:21,y:0,collision:0},
+        {kind:4,x:22,y:0,collision:0},
+        {kind:4,x:23,y:0,collision:0},
     ]
 };
 
