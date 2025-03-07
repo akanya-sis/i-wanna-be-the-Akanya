@@ -102,6 +102,11 @@ const stage = {
         {kind:4,x:24,y:0,collision:0},
         {kind:4,x:25,y:0,collision:0},
         {kind:4,x:26,y:0,collision:0},
+        {kind:4,x:27,y:0,collision:0},
+        {kind:4,x:28,y:0,collision:0},
+        {kind:4,x:29,y:0,collision:0},
+        {kind:4,x:30,y:0,collision:0},
+        {kind:4,x:31,y:0,collision:0},
     ]
 };
 
