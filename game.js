@@ -48,7 +48,7 @@ document.addEventListener('keyup', (e) => {
 const player = {
     x: 50,
     y: 400,
-    width: 16,
+    width: 32,
     height: 32,
     dx: 0,
     dy: 0,
