@@ -65,7 +65,7 @@
 
         const initialPlayer = { x: 100, y: canvas.height - 64, width: 16, height: 64, dx: 0, dy: 0, onGround: true };
 
-        let player = { ...initialPlayerPosition() };
+        let player = { ...initialPlayer };
 
         const keys = {};
 
@@ -107,7 +107,7 @@
 
         function resetGame() {
             player.x = initialPlayer.x;
-            player.y = initialPlayerPosition();
+            player.y = initialPlayer.y;
             player.dx = player.dy = 0;
             isGameOver = false;
             document.getElementById("gameOver").style.display = "none";
