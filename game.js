@@ -17,8 +17,8 @@ const debugPanel = document.getElementById('debugPanel');
 const gameOverPanel = document.getElementById('gameOver');
 
 // Set canvas size
-canvas.width = 800;
-canvas.height = 600;
+canvas.width = 1024;
+canvas.height = 576;
 
 // Game state
 let isGameOver = false;
@@ -106,7 +106,7 @@ function resetGame() {
     isGameOver = false;
     showPlayer = true;
     player.x = 50;
-    player.y = 400;
+    player.y = 100;
     player.dx = 0;
     player.dy = 0;
     deathParticles.length = 0;
