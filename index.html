@@ -63,7 +63,7 @@
         const JUMP_POWER = 15;
         const BLOCK_SIZE = 16;
 
-        const initialPlayer = { x: 100, y: canvas.height - 64, width: 16, height: 64, dx: 0, dy: 0, onGround: true };
+        const initialPlayer = { x: 100, y: canvas.height - 32, width: 16, height: 32, dx: 0, dy: 0, onGround: true };
 
         let player = { ...initialPlayer };
 
@@ -127,7 +127,7 @@
                 if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
                     if (block.kind === 4) {
                         isGameOver = true;
-                        gameOverPanel();
+                        gameOver();
                     }
                 }
 
