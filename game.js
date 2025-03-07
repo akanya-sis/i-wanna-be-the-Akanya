@@ -99,6 +99,9 @@ const stage = {
         {kind:4,x:21,y:0,collision:0},
         {kind:4,x:22,y:0,collision:0},
         {kind:4,x:23,y:0,collision:0},
+        {kind:4,x:24,y:0,collision:0},
+        {kind:4,x:25,y:0,collision:0},
+        {kind:4,x:26,y:0,collision:0},
     ]
 };
 
