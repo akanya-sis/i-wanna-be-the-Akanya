@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>I wanna be Akanya</title>
+    <link href="https://fonts.cdnfonts.com/css/public-pixel" rel="stylesheet">
     <style>
         body {
             margin: 0;
@@ -13,7 +14,7 @@
             height: 100vh;
             background-color: black;
             color: white;
-            font-family: monospace;
+            font-family: 'Public Pixel', sans-serif;
         }
         canvas {
             background-color: white;
@@ -25,8 +26,8 @@
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px;
-            font-size: 14px;
-            display: none;
+            font-size: 13px;
+            display: block;
         }
         .game-over {
             position: fixed;
@@ -34,15 +35,30 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            font-size: 24px;
             display: none;
+        }
+        .game-over-title {
+            -webkit-text-stroke: 4px black;
+            font-size: 84px;
+            font-weight: heavy;
+        }
+        .game-over-desc {
+            -webkit-text-stroke: 2px black;
+            font-size: 48px;
         }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="debugPanel" class="debug-panel"></div>
-    <div id="gameOver" class="game-over">GAME OVER<br>(Retry press R key)</div>
+    <div id="gameOver" class="game-over">
+      <div class="game-over-title">
+        GAME OVER
+      </div>
+      <div class="game-over-desc">
+        (Retry press R key)
+      </div>
+    </div>
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
@@ -52,32 +68,47 @@
         let debugMode = true;
         let doubleJumpEnabled = true;
         let canDoubleJump = false;
-        let jumpKeyReleased = true;
         let isGameOver = false;
+        let showPlayer = true;
 
-        canvas.width = 1024;
-        canvas.height = 576;
+        // パーティクル関連
+        let deathParticles = [];
+        const PARTICLE_GRAVITY = 0.2;
+        const PARTICLE_COUNT = 200;
+        const PARTICLE_SIZE = 3;
+        const PARTICLE_SPEED_MIN = -20;
+        const PARTICLE_SPEED_MAX = 20;
+        let deathStartTime = 0; // 死亡演出開始時刻
+        const NO_COLLISION_DURATION = 100; // ミリ秒
 
+        // キーの状態
+        const keys = {};
+        let oldZDown = false;
+
+        // プレイヤーの情報
         const GRAVITY = 0.5;
         const MOVE_SPEED = 5;
-        const JUMP_POWER = 15;
+        const JUMP_POWER = 14;
         const BLOCK_SIZE = 16;
 
         const initialPlayer = {
             x: 100,
-            y: canvas.height - 32,
+            y: 0,
             width: 16,
             height: 32,
             dx: 0,
             dy: 0,
-            onGround: true
+            onGround: false
         };
-
         let player = { ...initialPlayer };
-        const keys = {};
 
+        // ステージ定義
+        // collision:
+        //   0 => 全方向の当たり判定
+        //   1 => 上からのみ当たり判定
+        //   2 => 当たり判定なし
         const stage = {
-            blocks:[
+            blocks: [
                 {kind:1,x:0,y:0,collision:0},
                 {kind:1,x:1,y:0,collision:0},
                 {kind:1,x:2,y:0,collision:0},
@@ -97,31 +128,51 @@
                 {kind:1,x:13,y:3,collision:0},
                 {kind:1,x:14,y:3,collision:0},
                 {kind:1,x:15,y:3,collision:0},
-                {kind:4,x:16,y:0,collision:0} // 即死ブロック（黄色）
+                {kind:1,x:15,y:3,collision:0},
+                {kind:1,x:16,y:3,collision:0},
+                {kind:1,x:17,y:3,collision:0},
+                {kind:1,x:18,y:3,collision:0},
+                {kind:1,x:19,y:3,collision:0},
+                {kind:2,x:15,y:6,collision:1},
+                {kind:2,x:16,y:6,collision:1},
+                {kind:2,x:17,y:6,collision:1},
+                {kind:2,x:18,y:6,collision:1},
+                {kind:2,x:19,y:6,collision:1},
+                {kind:3,x:15,y:4,collision:2},
+                {kind:3,x:16,y:4,collision:2},
+                {kind:3,x:17,y:4,collision:2},
+                {kind:3,x:18,y:4,collision:2},
+                {kind:3,x:19,y:4,collision:2},
+                // 即死ブロック
+                {kind:4,x:20,y:0,collision:0},
+                {kind:4,x:21,y:0,collision:0},
+                {kind:4,x:22,y:0,collision:0},
+                {kind:4,x:23,y:0,collision:0},
             ]
         };
 
-        document.addEventListener("keydown", (event) => {
-            keys[event.key] = true;
-            if (isGameOver && event.key.toLowerCase() === "r") {
+        canvas.width = 1024;
+        canvas.height = 576;
+
+        // キー入力
+        document.addEventListener("keydown", (e) => {
+            keys[e.key] = true;
+            if (isGameOver && e.key.toLowerCase() === 'r') {
                 resetGame();
             }
         });
-        document.addEventListener("keyup", (event) => {
-            keys[event.key] = false;
-            if (event.key === "z") jumpKeyReleased = true;
+        document.addEventListener("keyup", (e) => {
+            keys[e.key] = false;
         });
 
         function resetGame() {
-            player.x = initialPlayer.x;
-            player.y = initialPlayer.y;
-            player.dx = 0;
-            player.dy = 0;
+            player = { ...initialPlayer };
             isGameOver = false;
-            document.getElementById("gameOver").style.display = "none";
+            showPlayer = true;
+            deathParticles = [];
+            gameOverPanel.style.display = "none";
         }
 
-        // 総合的な衝突判定
         function checkCollision(px, py, pw, ph, bx, by, bs) {
             return (
                 px < bx + bs &&
@@ -131,12 +182,19 @@
             );
         }
 
-        // 横方向の当たり判定と補正
-        function handleHorizontalCollisions() {
+        function handleCollisions() {
+            // 水平移動
+            player.x += player.dx;
             for (const block of stage.blocks) {
+                if (block.collision === 2) continue;
+                if (block.collision === 1) {
+                    // 上のみ
+                    continue;
+                }
+
                 const bx = block.x * BLOCK_SIZE;
                 const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
-                // プレイヤーが新しいX位置でブロックに衝突しているか確認
+
                 if (
                     checkCollision(
                         player.x,
@@ -148,13 +206,10 @@
                         BLOCK_SIZE
                     )
                 ) {
-                    // 即死ブロック判定
                     if (block.kind === 4) {
-                        gameOver();
+                        triggerDeathEffect();
                         return;
                     }
-
-                    // 衝突がある場合、プレイヤーが右へ移動中か左へ移動中かで補正
                     if (player.dx > 0) {
                         player.x = bx - player.width;
                     } else if (player.dx < 0) {
@@ -163,16 +218,17 @@
                     player.dx = 0;
                 }
             }
-        }
 
-        // 縦方向の当たり判定と補正
-        function handleVerticalCollisions() {
-            // 毎フレーム初期化
+            // 垂直移動
+            player.y += player.dy;
             player.onGround = false;
 
             for (const block of stage.blocks) {
+                if (block.collision === 2) continue;
+
                 const bx = block.x * BLOCK_SIZE;
                 const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
+
                 if (
                     checkCollision(
                         player.x,
@@ -185,18 +241,20 @@
                     )
                 ) {
                     if (block.kind === 4) {
-                        gameOver();
+                        triggerDeathEffect();
                         return;
                     }
 
-                    // プレイヤーが下方向に移動(落下)していた場合
+                    if (block.collision === 1 && player.dy < 0) {
+                        continue;
+                    }
+
                     if (player.dy > 0) {
                         player.y = by - player.height;
                         player.dy = 0;
                         player.onGround = true;
-                        canDoubleJump = true; // ブロックの上に着地したので二段ジャンプ回復
+                        canDoubleJump = true;
                     } else if (player.dy < 0) {
-                        // プレイヤーが上方向に移動(ジャンプ)していた場合
                         player.y = by + BLOCK_SIZE;
                         player.dy = 0;
                     }
@@ -204,8 +262,132 @@
             }
         }
 
+        function triggerDeathEffect() {
+            isGameOver = true;
+            showPlayer = false;
+            gameOverPanel.style.display = "block";
+            deathStartTime = performance.now();
+            for (let i = 0; i < PARTICLE_COUNT; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * (PARTICLE_SPEED_MAX - PARTICLE_SPEED_MIN) + PARTICLE_SPEED_MIN;
+                const vx = speed * Math.cos(angle);
+                const vy = speed * Math.sin(angle);
+                deathParticles.push({
+                    x: player.x + player.width / 2,
+                    y: player.y - player.height / 2,
+                    width: PARTICLE_SIZE,
+                    height: PARTICLE_SIZE,
+                    dx: vx,
+                    dy: vy,
+                });
+            }
+        }
+
+        function handleParticleCollisions(p) {
+            // 水平
+            p.x += p.dx;
+            for (const block of stage.blocks) {
+                if (block.collision === 2) continue;
+                if (block.collision === 1) continue;
+
+                const bx = block.x * BLOCK_SIZE;
+                const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
+                if (checkCollision(p.x, p.y, p.width, p.height, bx, by, BLOCK_SIZE)) {
+                    if (p.dx > 0) {
+                        p.x = bx - p.width;
+                    } else if (p.dx < 0) {
+                        p.x = bx + BLOCK_SIZE;
+                    }
+                    p.dx = 0;
+                }
+            }
+
+            // 垂直
+            p.y += p.dy;
+            let onBlock = false;
+            for (const block of stage.blocks) {
+                if (block.collision === 2) continue;
+                const bx = block.x * BLOCK_SIZE;
+                const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
+                if (checkCollision(p.x, p.y, p.width, p.height, bx, by, BLOCK_SIZE)) {
+                    if (block.collision === 1 && p.dy < 0) {
+                        continue;
+                    }
+                    if (p.dy > 0) {
+                        p.y = by - p.height;
+                        p.dy = 0;
+                        onBlock = true;
+                    } else if (p.dy < 0) {
+                        p.y = by + BLOCK_SIZE;
+                        p.dy = 0;
+                    }
+                }
+            }
+            if (onBlock) {
+                p.dx *= 0.8;
+            }
+        }
+
+        // パーティクル同士の衝突
+        function handleParticleInterCollision() {
+            for (let i = 0; i < deathParticles.length; i++) {
+                for (let j = i + 1; j < deathParticles.length; j++) {
+                    const p1 = deathParticles[i];
+                    const p2 = deathParticles[j];
+                    if (
+                        p1.x < p2.x + p2.width &&
+                        p1.x + p1.width > p2.x &&
+                        p1.y < p2.y + p2.height &&
+                        p1.y + p1.height > p2.y
+                    ) {
+                        // シンプルに2点を離す
+                        const overlapX = (p1.x < p2.x)
+                            ? (p1.x + p1.width - p2.x)
+                            : (p2.x + p2.width - p1.x);
+                        const overlapY = (p1.y < p2.y)
+                            ? (p1.y + p1.height - p2.y)
+                            : (p2.y + p2.height - p1.y);
+
+                        if (overlapX < overlapY) {
+                            if (p1.x < p2.x) {
+                                p1.x -= overlapX / 2;
+                                p2.x += overlapX / 2;
+                            } else {
+                                p1.x += overlapX / 2;
+                                p2.x -= overlapX / 2;
+                            }
+                            [p1.dx, p2.dx] = [ -p1.dx * 0.5, -p2.dx * 0.5 ];
+                        } else {
+                            if (p1.y < p2.y) {
+                                p1.y -= overlapY / 2;
+                                p2.y += overlapY / 2;
+                            } else {
+                                p1.y += overlapY / 2;
+                                p2.y -= overlapY / 2;
+                            }
+                            [p1.dy, p2.dy] = [ -p1.dy * 0.5, -p2.dy * 0.5 ];
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateParticles() {
+            for (const p of deathParticles) {
+                p.dy += PARTICLE_GRAVITY;
+                handleParticleCollisions(p);
+            }
+            // 死亡演出開始から0.1秒経ったらパーティクル同士の衝突
+            if (performance.now() - deathStartTime > NO_COLLISION_DURATION) {
+                handleParticleInterCollision();
+            }
+        }
+
         function update() {
-            if (isGameOver) return;
+            if (isGameOver) {
+                updateParticles();
+                return;
+            }
 
             // 横移動
             if (keys["ArrowLeft"]) {
@@ -217,74 +399,67 @@
             }
 
             // ジャンプ
-            if (keys["z"]) {
-                // 地上
-                if (player.onGround) {
-                    player.dy = -JUMP_POWER;
-                    player.onGround = false;
-                    canDoubleJump = true;
-                } else if (doubleJumpEnabled && canDoubleJump) {
-                    // 二段ジャンプ
-                    player.dy = -JUMP_POWER;
-                    canDoubleJump = false;
-                }
+            if (player.onGround && keys['z']) {
+                player.dy = -JUMP_POWER;
+                player.onGround = false;
+                canDoubleJump = true;
+            } else if (!player.onGround && !oldZDown && keys['z'] && doubleJumpEnabled && canDoubleJump) {
+                player.dy = -JUMP_POWER;
+                canDoubleJump = false;
             }
 
-            // 重力加算
             player.dy += GRAVITY;
+            handleCollisions();
 
-            // 実際に移動させながら衝突判定
-            player.x += player.dx;
-            handleHorizontalCollisions();
-
-            player.y += player.dy;
-            handleVerticalCollisions();
-
-            // 画面下にめり込まないように
-            if (player.y + player.height >= canvas.height) {
-                player.y = canvas.height - player.height;
-                player.dy = 0;
-                player.onGround = true;
-            }
+            oldZDown = keys['z'] || false;
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // ブロック描画
-            stage.blocks.forEach(block => {
+            // ブロック
+            stage.blocks.forEach((block) => {
                 ctx.fillStyle =
-                    block.kind === 1
-                        ? "brown"
-                        : block.kind === 2
-                        ? "blue"
-                        : block.kind === 3
-                        ? "green"
-                        : block.kind === 4
-                        ? "yellow"
-                        : "gray";
-
-                ctx.fillRect(
-                    block.x * BLOCK_SIZE,
-                    canvas.height - (block.y + 1) * BLOCK_SIZE,
-                    BLOCK_SIZE,
-                    BLOCK_SIZE
-                );
+                    block.kind === 1 ? "brown" :
+                    block.kind === 2 ? "blue"  :
+                    block.kind === 3 ? "green" :
+                    block.kind === 4 ? "yellow": "gray";
+                const bx = block.x * BLOCK_SIZE;
+                const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
+                ctx.fillRect(bx, by, BLOCK_SIZE, BLOCK_SIZE);
             });
 
-            // プレイヤー描画
+            // プレイヤー
+            if (showPlayer) {
+                ctx.fillStyle = "red";
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
+
+            // パーティクル
             ctx.fillStyle = "red";
-            ctx.fillRect(player.x, player.y, player.width, player.height);
+            for (const p of deathParticles) {
+                ctx.fillRect(p.x, p.y, p.width, p.height);
+            }
         }
 
-        function gameOver() {
-            isGameOver = true;
-            document.getElementById("gameOver").style.display = "block";
+        function drawDebugInfo() {
+            if (!debugMode) return;
+            debugPanel.innerHTML =
+                `x: ${player.x.toFixed(2)}<br>` +
+                `y: ${player.y.toFixed(2)}<br>` +
+                `dx: ${player.dx.toFixed(2)}<br>` +
+                `dy: ${player.dy.toFixed(2)}<br>` +
+                `onGround: ${player.onGround}<br>` +
+                `doubleJumpEnabled: ${doubleJumpEnabled}<br>` +
+                `canDoubleJump: ${canDoubleJump}<br>` +
+                `isGameOver: ${isGameOver}<br>` +
+                `oldZDown: ${oldZDown}`;
         }
 
         function gameLoop() {
             update();
             draw();
+            drawDebugInfo();
             requestAnimationFrame(gameLoop);
         }
 
