@@ -12,6 +12,8 @@
             align-items: center;
             height: 100vh;
             background-color: black;
+            color: white;
+            font-family: monospace;
         }
         canvas {
             background-color: white;
@@ -23,8 +25,16 @@
             background: rgba(0, 0, 0, 0.7);
             color: white;
             padding: 10px;
-            font-family: monospace;
             font-size: 14px;
+            display: none;
+        }
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            font-size: 24px;
             display: none;
         }
     </style>
@@ -32,15 +42,18 @@
 <body>
     <canvas id="gameCanvas"></canvas>
     <div id="debugPanel" class="debug-panel"></div>
+    <div id="gameOver" class="game-over">GAME OVER<br>(Retry press R key)</div>
     <script>
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         const debugPanel = document.getElementById("debugPanel");
+        const gameOverPanel = document.getElementById("gameOver");
 
         let debugMode = true;
         let doubleJumpEnabled = true;
         let canDoubleJump = false;
         let jumpKeyReleased = true;
+        let isGameOver = false;
 
         canvas.width = 1024;
         canvas.height = 576;
@@ -50,15 +63,9 @@
         const JUMP_POWER = 15;
         const BLOCK_SIZE = 16;
 
-        const player = {
-            x: 100,
-            y: canvas.height - 64,
-            width: 16,
-            height: 32,
-            dx: 0,
-            dy: 0,
-            onGround: true,
-        };
+        const initialPlayer = { x: 100, y: canvas.height - 64, width: 16, height: 64, dx: 0, dy: 0, onGround: true };
+
+        let player = { ...initialPlayerPosition() };
 
         const keys = {};
 
@@ -80,16 +87,31 @@
                 {kind:1,x:10,y:3,collision:0},
                 {kind:1,x:11,y:3,collision:0},
                 {kind:1,x:12,y:3,collision:0},
-                {kind:2,x:11,y:0,collision:0},
-                {kind:3,x:12,y:0,collision:0}
+                {kind:1,x:13,y:3,collision:0},
+                {kind:1,x:14,y:3,collision:0},
+                {kind:1,x:15,y:3,collision:0},
+                {kind:4,x:16,y:0,collision:0}, // 即死ブロック（黄色）
             ]
         };
 
-        document.addEventListener("keydown", (event) => { keys[event.key] = true; });
+        document.addEventListener("keydown", (event) => { 
+            keys[event.key] = true;
+            if (isGameOver && event.key.toLowerCase() === "r") {
+                resetGame();
+            }
+        });
         document.addEventListener("keyup", (event) => {
             keys[event.key] = false;
             if (event.key === "z") jumpKeyReleased = true;
         });
+
+        function resetGame() {
+            player.x = initialPlayer.x;
+            player.y = initialPlayerPosition();
+            player.dx = player.dy = 0;
+            isGameOver = false;
+            document.getElementById("gameOver").style.display = "none";
+        }
 
         function checkCollision(px, py, pw, ph, bx, by, bs) {
             return px < bx + bs && px + pw > bx && py < by + bs && py + ph > by;
@@ -102,27 +124,25 @@
                 const bx = block.x * BLOCK_SIZE;
                 const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-                if (checkCollision(player.x, player.y + player.dy, player.width, player.height, bx, by, BLOCK_SIZE)) {
-                    if (player.dy > 0 && player.y + player.height <= by + player.dy) {
-                        player.y = by - player.height;
-                        player.dy = 0;
-                        player.onGround = true;
-                        canDoubleJump = true;
-                    } else if (block.collision === 0 && player.dy < 0 && player.y >= by + BLOCK_SIZE) {
-                        player.y = by + BLOCK_SIZE;
-                        player.dy = 0;
+                if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
+                    if (block.kind === 4) {
+                        isGameOver = true;
+                        gameOverPanel();
                     }
                 }
 
-                if (block.collision === 0 && checkCollision(player.x + player.dx, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
-                    if (player.dx > 0) player.x = bx - player.width;
-                    if (player.dx < 0) player.x = bx + BLOCK_SIZE;
-                    player.dx = 0;
+                if (player.dy > 0 && checkCollision(player.x, player.y + player.dy, player.width, player.height, bx, by, BLOCK_SIZE)) {
+                    player.y = by - player.height;
+                    player.dy = 0;
+                    player.onGround = true;
+                    canDoubleJump = true;
                 }
             });
         }
 
         function update() {
+            if (isGameOver) return;
+
             player.dx = keys["ArrowLeft"] ? -MOVE_SPEED : keys["ArrowRight"] ? MOVE_SPEED : 0;
 
             if (keys["z"]) {
@@ -130,39 +150,45 @@
                     player.dy = -JUMP_POWER;
                     player.onGround = false;
                     canDoubleJump = true;
-                    jumpKeyReleased = false;
-                } else if (doubleJumpEnabled && canDoubleJump && jumpKeyReleased) {
+                } else if (doubleJumpEnabled && canDoubleJump) {
                     player.dy = -JUMP_POWER;
                     canDoubleJump = false;
-                    jumpKeyReleased = false;
                 }
             }
 
             player.dy += GRAVITY;
-            handleBlockCollisions();
             player.x += player.dx;
             player.y += player.dy;
+
+            handleBlockCollisions();
 
             if (player.y + player.height >= canvas.height) {
                 player.y = canvas.height - player.height;
                 player.dy = 0;
                 player.onGround = true;
-                canDoubleJump = true;
             }
         }
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             stage.blocks.forEach(block => {
-                ctx.fillStyle = block.kind === 1 ? "brown" : block.kind === 2 ? "blue" : block.kind === 3 ? "green" : "gray";
+                ctx.fillStyle = block.kind === 1 ? "brown" : block.kind === 2 ? "blue" : block.kind === 3 ? "green" : block.kind === 4 ? "yellow" : "gray";
                 ctx.fillRect(block.x * BLOCK_SIZE, canvas.height - (block.y + 1) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
             });
             ctx.fillStyle = "red";
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
+        function gameOver() {
+            isGameOver = true;
+            document.getElementById("gameOver").style.display = "block";
+        }
+
         function gameLoop() {
-            update(); draw(); requestAnimationFrame(gameLoop);
+            update();
+            draw();
+            handleBlockCollisions();
+            requestAnimationFrame(gameLoop);
         }
 
         gameLoop();
