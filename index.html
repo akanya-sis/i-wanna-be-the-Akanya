@@ -63,10 +63,17 @@
         const JUMP_POWER = 15;
         const BLOCK_SIZE = 16;
 
-        const initialPlayer = { x: 100, y: canvas.height - 32, width: 16, height: 32, dx: 0, dy: 0, onGround: true };
+        const initialPlayer = {
+            x: 100,
+            y: canvas.height - 32,
+            width: 16,
+            height: 32,
+            dx: 0,
+            dy: 0,
+            onGround: true
+        };
 
         let player = { ...initialPlayer };
-
         const keys = {};
 
         const stage = {
@@ -90,11 +97,11 @@
                 {kind:1,x:13,y:3,collision:0},
                 {kind:1,x:14,y:3,collision:0},
                 {kind:1,x:15,y:3,collision:0},
-                {kind:4,x:16,y:0,collision:0}, // 即死ブロック（黄色）
+                {kind:4,x:16,y:0,collision:0} // 即死ブロック（黄色）
             ]
         };
 
-        document.addEventListener("keydown", (event) => { 
+        document.addEventListener("keydown", (event) => {
             keys[event.key] = true;
             if (isGameOver && event.key.toLowerCase() === "r") {
                 resetGame();
@@ -108,60 +115,132 @@
         function resetGame() {
             player.x = initialPlayer.x;
             player.y = initialPlayer.y;
-            player.dx = player.dy = 0;
+            player.dx = 0;
+            player.dy = 0;
             isGameOver = false;
             document.getElementById("gameOver").style.display = "none";
         }
 
+        // 総合的な衝突判定
         function checkCollision(px, py, pw, ph, bx, by, bs) {
-            return px < bx + bs && px + pw > bx && py < by + bs && py + ph > by;
+            return (
+                px < bx + bs &&
+                px + pw > bx &&
+                py < by + bs &&
+                py + ph > by
+            );
         }
 
-        function handleBlockCollisions() {
-            player.onGround = false;
-            stage.blocks.forEach(block => {
-                if (block.collision === 2) return;
+        // 横方向の当たり判定と補正
+        function handleHorizontalCollisions() {
+            for (const block of stage.blocks) {
                 const bx = block.x * BLOCK_SIZE;
                 const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
-
-                if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
+                // プレイヤーが新しいX位置でブロックに衝突しているか確認
+                if (
+                    checkCollision(
+                        player.x,
+                        player.y,
+                        player.width,
+                        player.height,
+                        bx,
+                        by,
+                        BLOCK_SIZE
+                    )
+                ) {
+                    // 即死ブロック判定
                     if (block.kind === 4) {
-                        isGameOver = true;
                         gameOver();
+                        return;
+                    }
+
+                    // 衝突がある場合、プレイヤーが右へ移動中か左へ移動中かで補正
+                    if (player.dx > 0) {
+                        player.x = bx - player.width;
+                    } else if (player.dx < 0) {
+                        player.x = bx + BLOCK_SIZE;
+                    }
+                    player.dx = 0;
+                }
+            }
+        }
+
+        // 縦方向の当たり判定と補正
+        function handleVerticalCollisions() {
+            // 毎フレーム初期化
+            player.onGround = false;
+
+            for (const block of stage.blocks) {
+                const bx = block.x * BLOCK_SIZE;
+                const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
+                if (
+                    checkCollision(
+                        player.x,
+                        player.y,
+                        player.width,
+                        player.height,
+                        bx,
+                        by,
+                        BLOCK_SIZE
+                    )
+                ) {
+                    if (block.kind === 4) {
+                        gameOver();
+                        return;
+                    }
+
+                    // プレイヤーが下方向に移動(落下)していた場合
+                    if (player.dy > 0) {
+                        player.y = by - player.height;
+                        player.dy = 0;
+                        player.onGround = true;
+                        canDoubleJump = true; // ブロックの上に着地したので二段ジャンプ回復
+                    } else if (player.dy < 0) {
+                        // プレイヤーが上方向に移動(ジャンプ)していた場合
+                        player.y = by + BLOCK_SIZE;
+                        player.dy = 0;
                     }
                 }
-
-                if (player.dy > 0 && checkCollision(player.x, player.y + player.dy, player.width, player.height, bx, by, BLOCK_SIZE)) {
-                    player.y = by - player.height;
-                    player.dy = 0;
-                    player.onGround = true;
-                    canDoubleJump = true;
-                }
-            });
+            }
         }
 
         function update() {
             if (isGameOver) return;
 
-            player.dx = keys["ArrowLeft"] ? -MOVE_SPEED : keys["ArrowRight"] ? MOVE_SPEED : 0;
+            // 横移動
+            if (keys["ArrowLeft"]) {
+                player.dx = -MOVE_SPEED;
+            } else if (keys["ArrowRight"]) {
+                player.dx = MOVE_SPEED;
+            } else {
+                player.dx = 0;
+            }
 
+            // ジャンプ
             if (keys["z"]) {
+                // 地上
                 if (player.onGround) {
                     player.dy = -JUMP_POWER;
                     player.onGround = false;
                     canDoubleJump = true;
                 } else if (doubleJumpEnabled && canDoubleJump) {
+                    // 二段ジャンプ
                     player.dy = -JUMP_POWER;
                     canDoubleJump = false;
                 }
             }
 
+            // 重力加算
             player.dy += GRAVITY;
+
+            // 実際に移動させながら衝突判定
             player.x += player.dx;
+            handleHorizontalCollisions();
+
             player.y += player.dy;
+            handleVerticalCollisions();
 
-            handleBlockCollisions();
-
+            // 画面下にめり込まないように
             if (player.y + player.height >= canvas.height) {
                 player.y = canvas.height - player.height;
                 player.dy = 0;
@@ -171,10 +250,29 @@
 
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // ブロック描画
             stage.blocks.forEach(block => {
-                ctx.fillStyle = block.kind === 1 ? "brown" : block.kind === 2 ? "blue" : block.kind === 3 ? "green" : block.kind === 4 ? "yellow" : "gray";
-                ctx.fillRect(block.x * BLOCK_SIZE, canvas.height - (block.y + 1) * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                ctx.fillStyle =
+                    block.kind === 1
+                        ? "brown"
+                        : block.kind === 2
+                        ? "blue"
+                        : block.kind === 3
+                        ? "green"
+                        : block.kind === 4
+                        ? "yellow"
+                        : "gray";
+
+                ctx.fillRect(
+                    block.x * BLOCK_SIZE,
+                    canvas.height - (block.y + 1) * BLOCK_SIZE,
+                    BLOCK_SIZE,
+                    BLOCK_SIZE
+                );
             });
+
+            // プレイヤー描画
             ctx.fillStyle = "red";
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
@@ -187,7 +285,6 @@
         function gameLoop() {
             update();
             draw();
-            handleBlockCollisions();
             requestAnimationFrame(gameLoop);
         }
 
