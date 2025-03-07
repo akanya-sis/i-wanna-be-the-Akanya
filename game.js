@@ -112,4 +112,6 @@ function resetGame() {
     player.dy = 0;
     deathParticles.length = 0;
     gameOverPanel.style.display = "none";
+    gameOverSound.pause();
+    gameOverSound.currentTime = 0;
 }
