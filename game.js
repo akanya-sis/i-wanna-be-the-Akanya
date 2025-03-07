@@ -1,12 +1,12 @@
 // Game constants
-const BLOCK_SIZE = 32;
+const BLOCK_SIZE = 16;
 const MOVE_SPEED = 5;
 const JUMP_POWER = 15;
 const GRAVITY = 0.8;
-const PARTICLE_COUNT = 50;
-const PARTICLE_SIZE = 8;
-const PARTICLE_SPEED_MIN = 1;
-const PARTICLE_SPEED_MAX = 10;
+const PARTICLE_COUNT = 200;
+const PARTICLE_SIZE = 3;
+const PARTICLE_SPEED_MIN = -20;
+const PARTICLE_SPEED_MAX = 20;
 const PARTICLE_GRAVITY = 0.4;
 const NO_COLLISION_DURATION = 100; // ms
 
