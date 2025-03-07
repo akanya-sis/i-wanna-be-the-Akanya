@@ -15,6 +15,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 const debugPanel = document.getElementById('debugPanel');
 const gameOverPanel = document.getElementById('gameOver');
+const gameOverSound = new Audio("GameOver.mp3");
 
 // Set canvas size
 canvas.width = 1024;
