@@ -62,12 +62,12 @@ function draw() {
             // 左向き or 右向きの判定
             // 画像は左向きなので、右向き移動時は反転描画
 
-            // (A) 左向き (facingRight=false)
-            // (B) 右向き (facingRight=true) -> ctx.scale(-1,1)
+            // (A) 左向き (facingLeft=true)
+            // (B) 右向き (facingLeft=false) -> ctx.scale(-1,1)
 
             ctx.save(); // コンテキスト状態を保存
-            if (player.facingRight) {
-                // 右向きに反転
+            if (player.facingLeft) {
+                // 左向きに反転
                 // 原点を (player.x + player.width, player.y) に移動し、X軸反転
                 ctx.translate(player.x + player.width, player.y);
                 ctx.scale(-1, 1);
@@ -83,7 +83,7 @@ function draw() {
                     player.height
                 );
             } else {
-                // 左向きのまま描画
+                // 右向きのまま描画
                 ctx.drawImage(
                     playerImage,
                     sx, sy,
