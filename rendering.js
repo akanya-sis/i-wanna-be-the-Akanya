@@ -1,12 +1,7 @@
-const playerImage = new Image();
-playerImage.src = "player.gif";
-playerImage.onload = function() {
-    console.log("Player image loaded successfully");
-};
-playerImage.onerror = function() {
-    console.error("Error loading player image");
-    // Fallback to red rectangle if image fails to load
-};
+let playerGif;
+gifler('player.gif').get((anim) => {
+    playerGif = anim;
+});
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -25,8 +20,11 @@ function draw() {
 
     // Player
     if (showPlayer) {
-        if (playerImage.complete && playerImage.naturalWidth !== 0) {
-            ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+        if (playerGif) {
+            playerGif.onDrawFrame = function(ctx, frame) {
+                ctx.drawImage(frame.buffer, player.x, player.y, player.width, player.height);
+            };
+            playerGif.animateInCanvas(canvas);
         } else {
             ctx.fillStyle = "red";
             ctx.fillRect(player.x, player.y, player.width, player.height);
