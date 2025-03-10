@@ -1,9 +1,31 @@
-let playerGif;
+const playerImage = new Image();
+playerImage.src = "player.gif";
+playerImage.onload = function() {
+    console.log("Player image loaded successfully");
+};
+playerImage.onerror = function() {
+    console.error("Error loading player image");
+};
+
+// giflerアニメーション用フレームを保持する変数
+let playerGifFrame = null;
+
+// giflerを使ってGIFを読み込み、アニメーションを開始
+// ただし、ゲームループでのdraw()呼び出しと統合するため
+// animateInCanvas()は使わず、フレームデータだけ取得する
+
 gifler('player.gif').get((anim) => {
-    playerGif = anim;
+    anim.onDrawFrame = (ctx, frame) => {
+        // フレームを更新
+        playerGifFrame = frame;
+    };
+    // gifler独自のループは走るが、canvasには直接描画せず
+    // フレーム更新のみ行う
+    anim.animate();
 });
 
 function draw() {
+    // メインcanvasをクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Blocks
@@ -20,14 +42,25 @@ function draw() {
 
     // Player
     if (showPlayer) {
-        if (playerGif) {
-            playerGif.onDrawFrame = function(ctx, frame) {
-                ctx.drawImage(frame.buffer, player.x, player.y, player.width, player.height);
-            };
-            playerGif.animateInCanvas(canvas);
+        // GIFフレームが取得できていれば、それを描画
+        if (playerGifFrame) {
+            ctx.drawImage(
+                playerGifFrame.buffer,
+                player.x,
+                player.y,
+                player.width,
+                player.height
+            );
         } else {
-            ctx.fillStyle = "red";
-            ctx.fillRect(player.x, player.y, player.width, player.height);
+            // フレームがまだない場合のフォールバック
+            // もしくはplayerImageが使えるなら
+            if (playerImage.complete && playerImage.naturalWidth !== 0) {
+                ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+            } else {
+                // 静止画もまだなら、赤い四角で代用
+                ctx.fillStyle = "red";
+                ctx.fillRect(player.x, player.y, player.width, player.height);
+            }
         }
     }
 
