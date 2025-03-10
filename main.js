@@ -40,10 +40,10 @@ function fixedUpdate() {
     // 横移動
     if (keys["ArrowLeft"]) {
         player.dx = -MOVE_SPEED;
-        player.facingRight = false;
+        player.facingRight = true;
     } else if (keys["ArrowRight"]) {
         player.dx = MOVE_SPEED;
-        player.facingRight = true;
+        player.facingRight = false;
     } else {
        player.dx = 0;
     }
