@@ -36,7 +36,7 @@ document.addEventListener('keydown', (e) => {
     keys[e.key] = true;
     
     // Restart game on R key press
-    if (e.key === 'r' && isGameOver) {
+    if (e.key === 'r') {
         resetGame();
     }
 });
