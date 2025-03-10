@@ -1,18 +1,8 @@
 //-------------------------------------
-// スプライトシートを用いたアニメーション
-//-------------------------------------
-// 32x32サイズのコマが横方向に6つ並んだ (192x32) のplayer.pngを使い
-// フレームを切り替えながら描画するサンプルです。
-
-// 1. 画像の読み込み
-// 2. フレーム制御用の変数を増やす
-// 3. draw() 内で frameIndex に応じてスプライトシートを切り出し
-
-//-------------------------------------
-// 画像・変数の定義
+// 画像の読み込み & 初期化
 //-------------------------------------
 const playerImage = new Image();
-playerImage.src = "player.png";  // ← player.gif ではなく、192x32のスプライトシート
+playerImage.src = "player.png";  // 192×64のスプライトシート (横6, 縦2)
 playerImage.onload = function() {
     console.log("Player sprite sheet loaded successfully");
 };
@@ -24,21 +14,21 @@ playerImage.onerror = function() {
 const SPRITE_FRAME_WIDTH = 32;
 const SPRITE_FRAME_HEIGHT = 32;
 
-// フレーム数（横に6枚並んでいる想定）
+// フレーム数 (横に6コマ)
 const SPRITE_FRAME_COUNT = 6;
 
 // アニメーション制御用カウンタ
-// 今回はゲームループが呼ばれるたびにインクリメントして、一定速度でコマを進める
+// 毎フレーム加算し、一定周期ごとにフレームを進める
 let playerAnimCounter = 0;
 
 //-------------------------------------
-// メインの描画処理 (スプライトシートによるアニメーション)
+// メイン描画処理
 //-------------------------------------
 function draw() {
-    // メインcanvasをクリア
+    // キャンバスクリア
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Blocks
+    // ブロック描画 (サンプル)
     stage.blocks.forEach((block) => {
         ctx.fillStyle =
             block.kind === 1 ? "brown" :
@@ -50,43 +40,71 @@ function draw() {
         ctx.fillRect(bx, by, BLOCK_SIZE, BLOCK_SIZE);
     });
 
-    // Player
+    // プレイヤー
     if (showPlayer) {
+        // スプライトシートがロード済みか確認
         if (playerImage.complete && playerImage.naturalWidth !== 0) {
-            // (A) スプライトシートがロード済みの場合
-
-            // アニメーション用カウンタを進める
-            // ここでは毎フレーム加算して、10フレームごとに次のコマへ
-            // ※好みに応じて値を調整
+            // アニメーションカウンタを進める
             playerAnimCounter++;
 
-            // 現在のコマを計算（0~5 をループ）
-            // 例: Math.floor(playerAnimCounter / 10) で10フレームごとに1つ進む
+            // 速度に応じて frameIndex を計算 (10フレームに1回コマ送り)
             const frameIndex = Math.floor(playerAnimCounter / 10) % SPRITE_FRAME_COUNT;
 
-            // スプライトシートの描画: drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
-            const sx = frameIndex * SPRITE_FRAME_WIDTH; // 切り出すX座標
-            const sy = 0;                               // 1行だけなのでYは常に0
+            // (1) 上段: idle, (2) 下段: 移動
+            // dxが0なら idle、そうでなければ移動アニメ
+            const isMoving = (player.dx !== 0);
+            const rowIndex = isMoving ? 1 : 0;  // 0=上段, 1=下段
 
-            ctx.drawImage(
-                playerImage,
-                sx,         // スプライトシートからの切り出し開始X
-                sy,         // スプライトシートからの切り出し開始Y
-                SPRITE_FRAME_WIDTH,  // 切り出し幅
-                SPRITE_FRAME_HEIGHT, // 切り出し高さ
-                player.x,   // canvas上の描画先X
-                player.y,   // canvas上の描画先Y
-                player.width,  // 描画先幅（キャラの大きさに合わせる）
-                player.height  // 描画先高さ
-            );
+            // スプライトシート上の切り出し座標
+            const sx = frameIndex * SPRITE_FRAME_WIDTH;
+            const sy = rowIndex * SPRITE_FRAME_HEIGHT;
+
+            // 左向き or 右向きの判定
+            // 画像は左向きなので、右向き移動時は反転描画
+
+            // (A) 左向き (facingRight=false)
+            // (B) 右向き (facingRight=true) -> ctx.scale(-1,1)
+
+            ctx.save(); // コンテキスト状態を保存
+            if (player.facingRight) {
+                // 右向きに反転
+                // 原点を (player.x + player.width, player.y) に移動し、X軸反転
+                ctx.translate(player.x + player.width, player.y);
+                ctx.scale(-1, 1);
+
+                // 反転した座標系で描画先 (0,0) に描画
+                ctx.drawImage(
+                    playerImage,
+                    sx, sy, // 切り出し開始
+                    SPRITE_FRAME_WIDTH,
+                    SPRITE_FRAME_HEIGHT,
+                    0, 0,   // 反転後の描画先
+                    player.width,
+                    player.height
+                );
+            } else {
+                // 左向きのまま描画
+                ctx.drawImage(
+                    playerImage,
+                    sx, sy,
+                    SPRITE_FRAME_WIDTH,
+                    SPRITE_FRAME_HEIGHT,
+                    player.x,
+                    player.y,
+                    player.width,
+                    player.height
+                );
+            }
+            ctx.restore(); // コンテキスト状態を元に戻す
+
         } else {
-            // (B) スプライトシートがまだロードされていない場合
+            // スプライトシートがまだロードされていない場合
             ctx.fillStyle = "red";
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
     }
 
-    // Particles
+    // パーティクル
     ctx.fillStyle = "red";
     for (const p of deathParticles) {
         ctx.fillRect(p.x, p.y, p.width, p.height);
@@ -94,7 +112,7 @@ function draw() {
 }
 
 //-------------------------------------
-// デバッグ情報描画
+// デバッグ情報
 //-------------------------------------
 function drawDebugInfo() {
     if (!debugMode) return;
