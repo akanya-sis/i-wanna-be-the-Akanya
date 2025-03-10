@@ -40,12 +40,13 @@ function fixedUpdate() {
     // 横移動
     if (keys["ArrowLeft"]) {
         player.dx = -MOVE_SPEED;
+        player.facingRight = false;
     } else if (keys["ArrowRight"]) {
         player.dx = MOVE_SPEED;
+        player.facingRight = true;
     } else {
-        player.dx = 0;
+       player.dx = 0;
     }
-
     // ジャンプ
     if (player.onGround && keys['z']) {
         player.dy = -JUMP_POWER;
