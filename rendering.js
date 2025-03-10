@@ -1,32 +1,38 @@
 //-------------------------------------
+// スプライトシートを用いたアニメーション
+//-------------------------------------
+// 32x32サイズのコマが横方向に6つ並んだ (192x32) のplayer.pngを使い
+// フレームを切り替えながら描画するサンプルです。
+
+// 1. 画像の読み込み
+// 2. フレーム制御用の変数を増やす
+// 3. draw() 内で frameIndex に応じてスプライトシートを切り出し
+
+//-------------------------------------
 // 画像・変数の定義
 //-------------------------------------
 const playerImage = new Image();
-playerImage.src = "player.gif";
+playerImage.src = "player.png";  // ← player.gif ではなく、192x32のスプライトシート
 playerImage.onload = function() {
-    console.log("Player image loaded successfully");
+    console.log("Player sprite sheet loaded successfully");
 };
 playerImage.onerror = function() {
-    console.error("Error loading player image");
+    console.error("Error loading player sprite sheet");
 };
 
-// giflerアニメーション用フレームを保持する変数
-let playerGifFrame = null;
+// スプライト1コマあたりの幅・高さ
+const SPRITE_FRAME_WIDTH = 32;
+const SPRITE_FRAME_HEIGHT = 32;
+
+// フレーム数（横に6枚並んでいる想定）
+const SPRITE_FRAME_COUNT = 6;
+
+// アニメーション制御用カウンタ
+// 今回はゲームループが呼ばれるたびにインクリメントして、一定速度でコマを進める
+let playerAnimCounter = 0;
 
 //-------------------------------------
-// giflerを使ってGIFを読み込み、フレームのみ取得
-//-------------------------------------
-gifler("player.gif").get((anim) => {
-    anim.onDrawFrame = (ctx, frame) => {
-        // フレームを更新
-        playerGifFrame = frame;
-    };
-    // フレームの更新のみ行う
-    anim.animate();
-});
-
-//-------------------------------------
-// メインの描画処理
+// メインの描画処理 (スプライトシートによるアニメーション)
 //-------------------------------------
 function draw() {
     // メインcanvasをクリア
@@ -46,25 +52,37 @@ function draw() {
 
     // Player
     if (showPlayer) {
-        // GIFフレームが取得できていれば、それを描画
-        if (playerGifFrame) {
+        if (playerImage.complete && playerImage.naturalWidth !== 0) {
+            // (A) スプライトシートがロード済みの場合
+
+            // アニメーション用カウンタを進める
+            // ここでは毎フレーム加算して、10フレームごとに次のコマへ
+            // ※好みに応じて値を調整
+            playerAnimCounter++;
+
+            // 現在のコマを計算（0~5 をループ）
+            // 例: Math.floor(playerAnimCounter / 10) で10フレームごとに1つ進む
+            const frameIndex = Math.floor(playerAnimCounter / 10) % SPRITE_FRAME_COUNT;
+
+            // スプライトシートの描画: drawImage(image, sx, sy, sw, sh, dx, dy, dw, dh)
+            const sx = frameIndex * SPRITE_FRAME_WIDTH; // 切り出すX座標
+            const sy = 0;                               // 1行だけなのでYは常に0
+
             ctx.drawImage(
-                playerGifFrame.buffer,
-                player.x,
-                player.y,
-                player.width,
-                player.height
+                playerImage,
+                sx,         // スプライトシートからの切り出し開始X
+                sy,         // スプライトシートからの切り出し開始Y
+                SPRITE_FRAME_WIDTH,  // 切り出し幅
+                SPRITE_FRAME_HEIGHT, // 切り出し高さ
+                player.x,   // canvas上の描画先X
+                player.y,   // canvas上の描画先Y
+                player.width,  // 描画先幅（キャラの大きさに合わせる）
+                player.height  // 描画先高さ
             );
         } else {
-            // フレームがまだない場合のフォールバック
-            if (playerImage.complete && playerImage.naturalWidth !== 0) {
-                // 静止画もロード済みなら
-                ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-            } else {
-                // 静止画もまだなら赤い四角
-                ctx.fillStyle = "red";
-                ctx.fillRect(player.x, player.y, player.width, player.height);
-            }
+            // (B) スプライトシートがまだロードされていない場合
+            ctx.fillStyle = "red";
+            ctx.fillRect(player.x, player.y, player.width, player.height);
         }
     }
 
