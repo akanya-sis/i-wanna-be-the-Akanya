@@ -15,26 +15,14 @@ let playerGifFrame = null;
 
 //-------------------------------------
 // giflerを使ってGIFを読み込み、フレームのみ取得
-// .animate() が存在しないバージョンの場合は .animateInCanvas(canvas) を使う
 //-------------------------------------
 gifler("player.gif").get((anim) => {
-    // フレーム更新のコールバック
     anim.onDrawFrame = (ctx, frame) => {
+        // フレームを更新
         playerGifFrame = frame;
     };
-
-    // gifler でフレームを自動的に進める
-    // 古いバージョンでは anim.animate() が無く "TypeError: anim.animate is not a function" となるため
-    // 代わりに animateInCanvas(...) を使用
-
-    // ここではメインcanvasに描画したくないため、1x1のダミーcanvasを用意してそこに描画させ
-    // フレーム情報のみ受け取って draw() で使います
-    const dummyCanvas = document.createElement('canvas');
-    dummyCanvas.width = 1;
-    dummyCanvas.height = 1;
-
-    // anim.animateInCanvas(dummyCanvas) で内部的にGIFのフレームを自動再生し、onDrawFrameを呼び出します
-    anim.animateInCanvas(dummyCanvas);
+    // フレームの更新のみ行う
+    anim.animate();
 });
 
 //-------------------------------------
