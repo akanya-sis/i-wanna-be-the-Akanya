@@ -147,9 +147,9 @@ function handleCollisions() {
     //========== 水平移動 ==========//
     player.x += player.dx;
 
-    // プレイヤーの円心と半径 (半径8px, 中心はプレイヤーの画像中央あたり)
+    // プレイヤーの円心と半径 (半径8px, 下寄りに配置)
     let centerX = player.x + player.width / 2;
-    let centerY = player.y + player.height / 2;
+    let centerY = player.y + player.height - 8;
     const r = 8;  // 半径8px
 
     for (const block of stage.blocks) {
@@ -172,22 +172,18 @@ function handleCollisions() {
                     triggerDeathEffect();
                     return;
                 }
-                // 三角形が通常床などの場合はここで押し戻し等を書く
-                // (本例では即死と同じ扱いにするなら上記のように return)
                 triggerDeathEffect();
                 return;
             }
         } else {
             // 通常ブロックなど (円 vs 矩形)
             if (circleRectCollision(centerX, centerY, r, bx, by, BLOCK_SIZE, BLOCK_SIZE)) {
-                // 例えば「即死ブロック(kind===4)」なら処理
                 if (block.kind === 4) {
                     triggerDeathEffect();
                     return;
                 }
-                // block.collision===1 (上のみ) 等、細かい仕様は適宜
-                // 簡易的に「どちらの方向から衝突したか」を AABB風に押し戻す
 
+                // 簡易的に「どちらの方向から衝突したか」を AABB風に押し戻す
                 if (player.dx > 0) {
                     // 右へ進んで衝突
                     player.x = bx - (player.width / 2);
@@ -206,7 +202,7 @@ function handleCollisions() {
 
     // 移動後に再計算
     centerX = player.x + player.width / 2;
-    centerY = player.y + player.height / 2;
+    centerY = player.y + player.height - 8;
 
     for (const block of stage.blocks) {
         if (block.collision === 2) continue;
@@ -241,7 +237,7 @@ function handleCollisions() {
                     const overlap = (centerY + r) - by;
                     if (overlap > 0) {
                         centerY -= overlap;
-                        player.y = centerY - (player.height / 2);
+                        player.y = centerY - (player.height - 8);
                         player.dy = 0;
                         player.onGround = true;
                         canDoubleJump = true;
@@ -251,7 +247,7 @@ function handleCollisions() {
                     const overlap = (by + BLOCK_SIZE) - (centerY - r);
                     if (overlap > 0) {
                         centerY += overlap;
-                        player.y = centerY - (player.height / 2);
+                        player.y = centerY - (player.height - 8);
                         player.dy = 0;
                     }
                 }
