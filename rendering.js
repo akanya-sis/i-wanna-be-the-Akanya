@@ -102,6 +102,17 @@ function draw() {
             ctx.fillStyle = "red";
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
+
+        // [追加] デバッグモード時だけ、プレイヤーの円形当たり判定を描画
+        if (debugMode) {
+            const cx = player.x + player.width / 2;
+            const cy = player.y + player.height / 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
     }
 
     // パーティクル
