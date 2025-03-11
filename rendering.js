@@ -30,15 +30,56 @@ function draw() {
 
     // ブロック描画 (サンプル)
     stage.blocks.forEach((block) => {
-        ctx.fillStyle =
-            block.kind === 1 ? "brown" :
-            block.kind === 2 ? "blue" :
-            block.kind === 3 ? "green" :
-            block.kind === 4 ? "yellow" : "gray";
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
-        ctx.fillRect(bx, by, BLOCK_SIZE, BLOCK_SIZE);
+    
+        if (block.kind === 11) {
+            // 上三角形 (△)
+            ctx.fillStyle = "gray";
+            ctx.beginPath();
+            ctx.moveTo(bx,     by+16);
+            ctx.lineTo(bx+16, by+16);
+            ctx.lineTo(bx+8,  by);
+            ctx.closePath();
+            ctx.fill();
+        } else if (block.kind === 12) {
+            // 右三角形 (▷)
+            ctx.fillStyle = "gray";
+            ctx.beginPath();
+            ctx.moveTo(bx,     by);
+            ctx.lineTo(bx,     by+16);
+            ctx.lineTo(bx+16,  by+8);
+            ctx.closePath();
+            ctx.fill();
+        } else if (block.kind === 13) {
+            // 下三角形 (▽)
+            ctx.fillStyle = "gray";
+            ctx.beginPath();
+            ctx.moveTo(bx,     by);
+            ctx.lineTo(bx+16,  by);
+            ctx.lineTo(bx+8,   by+16);
+            ctx.closePath();
+            ctx.fill();
+        } else if (block.kind === 14) {
+            // 左三角形 (◁)
+            ctx.fillStyle = "gray";
+            ctx.beginPath();
+            ctx.moveTo(bx+16,  by);
+            ctx.lineTo(bx+16,  by+16);
+            ctx.lineTo(bx,     by+8);
+            ctx.closePath();
+            ctx.fill();
+        } else {
+            // それ以外 (従来の矩形描画)
+            ctx.fillStyle =
+                block.kind === 1 ? "brown" :
+                block.kind === 2 ? "blue" :
+                block.kind === 3 ? "green" :
+                block.kind === 4 ? "yellow" : "gray";
+            ctx.fillRect(bx, by, BLOCK_SIZE, BLOCK_SIZE);
+        }
     });
+
 
     // プレイヤー
     if (showPlayer) {
