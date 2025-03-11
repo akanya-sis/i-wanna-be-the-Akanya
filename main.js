@@ -60,6 +60,10 @@ function fixedUpdate() {
     // 重力
     player.dy += GRAVITY;
 
+    if (oldZDown && !keys['z'] && player.dy < 0) {
+        player.dy = 0;
+    }
+
     handleCollisions();
     oldZDown = keys['z'] || false;
 }
