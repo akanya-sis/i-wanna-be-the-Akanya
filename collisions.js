@@ -25,6 +25,8 @@ function setCollisionRect(player, rect) {
 
 //
 // AABB collision check (旧: 矩形同士の衝突判定用)
+//  px, py, pw, ph : AABB1 (左上x, 左上y, 幅, 高さ)
+//  bx, by, bs     : AABB2 (左上x, 左上y, 幅=bs, 高さ=bs)
 //
 function checkCollision(px, py, pw, ph, bx, by, bs) {
     return (
@@ -37,6 +39,7 @@ function checkCollision(px, py, pw, ph, bx, by, bs) {
 
 //
 // [追加] 円 vs 矩形の衝突判定
+//   ※ 今回も残しておくが通常ブロックにはAABBを使用
 //
 function circleRectCollision(cx, cy, r, rx, ry, rw, rh) {
     const closestX = Math.max(rx, Math.min(cx, rx + rw));
@@ -141,24 +144,31 @@ function getTriangleVertices(bx, by, collision) {
 }
 
 //
-// プレイヤー vs ブロックの衝突処理 (円形の当たり判定 + 三角形対応)
+// プレイヤー vs ブロックの衝突処理
+//   (通常ブロックは 2r×2r のAABBで判定, 三角形だけは 円vs三角形 で判定)
 //
 function handleCollisions() {
-    //========== 水平移動 ==========//
+    // (1) 水平移動
     player.x += player.dx;
 
-    // プレイヤーの円心と半径 (半径8px, 下寄りに配置)
-    let centerX = player.x + player.width / 2;
-    let centerY = player.y + player.height - 8;
-    const r = 8;  // 半径8px
+    // 衝突判定用AABBの左上座標(px, py)と幅、高さ(16×16)
+    let px = (player.x + player.width / 2) - 8;
+    let py = (player.y + player.height / 2) - 8;
+    const pw = 16;
+    const ph = 16;
+
+    // 円の中心 (AABBの真ん中)
+    let cx = px + 8;
+    let cy = py + 8;
+    const r = 8;
 
     for (const block of stage.blocks) {
-        if (block.collision === 2) continue;  // すり抜け等の場合
+        if (block.collision === 2) continue;  // すり抜け等
 
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        // 三角形スパイク系
+        // 三角形オブジェクトの場合は円 vs 三角形
         if (
             block.collision === 11 ||
             block.collision === 12 ||
@@ -166,43 +176,46 @@ function handleCollisions() {
             block.collision === 14
         ) {
             const tri = getTriangleVertices(bx, by, block.collision);
-            if (circleTriangleCollision(centerX, centerY, r, tri)) {
-                // 即死ブロック(例: kind===4)の処理を踏襲
+            if (circleTriangleCollision(cx, cy, r, tri)) {
+                // 即死ブロックかどうか
                 if (block.kind === 4) {
                     triggerDeathEffect();
                     return;
                 }
+                // 他の三角形もスパイク扱いなら即死
                 triggerDeathEffect();
                 return;
             }
         } else {
-            // 通常ブロックなど (円 vs 矩形)
-            if (circleRectCollision(centerX, centerY, r, bx, by, BLOCK_SIZE, BLOCK_SIZE)) {
+            // 通常ブロックはAABB同士の衝突チェック
+            if (checkCollision(px, py, pw, ph, bx, by, BLOCK_SIZE)) {
                 if (block.kind === 4) {
                     triggerDeathEffect();
                     return;
                 }
-
-                // 簡易的に「どちらの方向から衝突したか」を AABB風に押し戻す
+                // 横押し戻し
                 if (player.dx > 0) {
-                    // 右へ進んで衝突
-                    player.x = bx - (player.width / 2);
+                    px = bx - pw; 
                 } else if (player.dx < 0) {
-                    // 左へ進んで衝突
-                    player.x = bx + BLOCK_SIZE - (player.width / 2);
+                    px = bx + BLOCK_SIZE;
                 }
                 player.dx = 0;
+                // AABB座標からplayerへ反映
+                player.x = px + 8 - (player.width / 2);
+                player.y = py + 8 - (player.height / 2);
             }
         }
     }
 
-    //========== 垂直移動 ==========//
+    // (2) 垂直移動
     player.y += player.dy;
     player.onGround = false;
 
-    // 移動後に再計算
-    centerX = player.x + player.width / 2;
-    centerY = player.y + player.height - 8;
+    // AABB座標再計算
+    let px2 = (player.x + player.width / 2) - 8;
+    let py2 = (player.y + player.height / 2) - 8;
+    cx = px2 + 8;
+    cy = py2 + 8;
 
     for (const block of stage.blocks) {
         if (block.collision === 2) continue;
@@ -216,8 +229,9 @@ function handleCollisions() {
             block.collision === 13 ||
             block.collision === 14
         ) {
+            // 三角形 => 円 vs 三角形
             const tri = getTriangleVertices(bx, by, block.collision);
-            if (circleTriangleCollision(centerX, centerY, r, tri)) {
+            if (circleTriangleCollision(cx, cy, r, tri)) {
                 if (block.kind === 4) {
                     triggerDeathEffect();
                     return;
@@ -226,31 +240,25 @@ function handleCollisions() {
                 return;
             }
         } else {
-            if (circleRectCollision(centerX, centerY, r, bx, by, BLOCK_SIZE, BLOCK_SIZE)) {
+            // 通常ブロック => AABB
+            if (checkCollision(px2, py2, pw, ph, bx, by, BLOCK_SIZE)) {
                 if (block.kind === 4) {
                     triggerDeathEffect();
                     return;
                 }
-                // block.collision===1 (上のみ衝突) などは適宜
+                // 縦押し戻し
                 if (player.dy > 0) {
-                    // 下向き(=上から着地)
-                    const overlap = (centerY + r) - by;
-                    if (overlap > 0) {
-                        centerY -= overlap;
-                        player.y = centerY - (player.height - 8);
-                        player.dy = 0;
-                        player.onGround = true;
-                        canDoubleJump = true;
-                    }
+                    py2 = by - ph; 
+                    player.dy = 0;
+                    player.onGround = true;
+                    canDoubleJump = true;
                 } else if (player.dy < 0) {
-                    // 上向き(=天井)
-                    const overlap = (by + BLOCK_SIZE) - (centerY - r);
-                    if (overlap > 0) {
-                        centerY += overlap;
-                        player.y = centerY - (player.height - 8);
-                        player.dy = 0;
-                    }
+                    py2 = by + BLOCK_SIZE;
+                    player.dy = 0;
                 }
+                // AABB座標からplayerへ反映
+                player.x = px2 + 8 - (player.width / 2);
+                player.y = py2 + 8 - (player.height / 2);
             }
         }
     }
