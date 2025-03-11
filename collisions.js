@@ -13,8 +13,8 @@ function handleCollisions() {
     player.x += player.dx;
 
     // 当たり判定用の座標を計算
-    const collisionX = player.x + (player.width - player.collisionWidth) / 2;
-    const collisionY = player.y + (player.height - player.collisionHeight) / 2;
+    const collisionX = player.x - player.collisionWidth;
+    const collisionY = player.y - player.collisionHeight;
 
     for (const block of stage.blocks) {
         // (略) collision===2や1の考慮は同じ
