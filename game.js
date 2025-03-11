@@ -52,7 +52,9 @@ const player = {
     height: 32,
     dx: 0,
     dy: 0,
-    onGround: false
+    onGround: false,
+    collisionWidth: 16,
+    collisionHeight: 16
 };
 
 const deathParticles = [];
