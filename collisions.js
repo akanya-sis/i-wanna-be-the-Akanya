@@ -1,3 +1,24 @@
+// 当たり判定用の矩形を取得
+function getCollisionRect(player) {
+    const offsetX = (player.width - player.collisionWidth) / 2;
+    const offsetY = (player.height - player.collisionHeight) / 2;
+    return {
+        x: player.x + offsetX,
+        y: player.y + offsetY,
+        w: player.collisionWidth,
+        h: player.collisionHeight
+    };
+}
+
+// 当たり判定用矩形からプレイヤーの座標に反映
+function setCollisionRect(player, rect) {
+    const offsetX = (player.width - player.collisionWidth) / 2;
+    const offsetY = (player.height - player.collisionHeight) / 2;
+    // rect.x, rect.y は「衝突判定用矩形」の左上の座標
+    player.x = rect.x - offsetX;
+    player.y = rect.y - offsetY;
+}
+
 // AABB collision check
 function checkCollision(px, py, pw, ph, bx, by, bs) {
     return (
@@ -12,9 +33,8 @@ function handleCollisions() {
     // 水平移動
     player.x += player.dx;
 
-    // 当たり判定用の座標を計算
-    const collisionX = player.x - player.collisionWidth;
-    const collisionY = player.y - player.collisionHeight;
+    // 衝突判定用の矩形
+    let cRect = getCollisionRect(player);
 
     for (const block of stage.blocks) {
         // (略) collision===2や1の考慮は同じ
@@ -23,15 +43,7 @@ function handleCollisions() {
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
         // プレイヤー当たり判定の位置/サイズで衝突検出
-        if (checkCollision(
-            collisionX, 
-            collisionY, 
-            player.collisionWidth, 
-            player.collisionHeight,
-            bx, 
-            by, 
-            BLOCK_SIZE
-        )) {
+        if (checkCollision(cRect.x, cRect.y, cRect.w, cRect.h, bx, by, BLOCK_SIZE)) {
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
@@ -48,22 +60,15 @@ function handleCollisions() {
     // 垂直移動
     player.y += player.dy;
     player.onGround = false;
-    const cX2 = player.x - player.collisionWidth;
-    const cY2 = player.y - player.collisionHeight;
+
+    // 再度 cRect を計算
+    cRect = getCollisionRect(player);
 
     for (const block of stage.blocks) {
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        if (checkCollision(
-            cX2, 
-            cY2, 
-            player.collisionWidth, 
-            player.collisionHeight,
-            bx, 
-            by,
-            BLOCK_SIZE
-        )) {
+        if (checkCollision(cRect.x, cRect.y, cRect.w, cRect.h, bx, by, BLOCK_SIZE)) {
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
