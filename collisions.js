@@ -49,7 +49,7 @@ function handleCollisions() {
     player.y += player.dy;
     player.onGround = false;
     const cX2 = player.x - player.collisionWidth;
-    const cY2 = player.y + player.collisionHeight;
+    const cY2 = player.y - player.collisionHeight;
 
     for (const block of stage.blocks) {
         const bx = block.x * BLOCK_SIZE;
