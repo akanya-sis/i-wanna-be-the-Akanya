@@ -1,7 +1,7 @@
 // 当たり判定用の矩形を取得
 function getCollisionRect(player) {
     const offsetX = (player.width - player.collisionWidth) / 2;
-    const offsetY = (player.height - player.collisionHeight) / 2;
+    const offsetY = (player.height - player.collisionHeight);
     return {
         x: player.x + offsetX,
         y: player.y + offsetY,
@@ -13,7 +13,7 @@ function getCollisionRect(player) {
 // 当たり判定用矩形からプレイヤーの座標に反映
 function setCollisionRect(player, rect) {
     const offsetX = (player.width - player.collisionWidth) / 2;
-    const offsetY = (player.height - player.collisionHeight) / 2;
+    const offsetY = (player.height - player.collisionHeight);
     // rect.x, rect.y は「衝突判定用矩形」の左上の座標
     player.x = rect.x - offsetX;
     player.y = rect.y - offsetY;
@@ -30,41 +30,56 @@ function checkCollision(px, py, pw, ph, bx, by, bs) {
 }
 
 function handleCollisions() {
-    // 水平移動
+    //========== 水平移動 ==========//
     player.x += player.dx;
 
-    // 衝突判定用の矩形
+    // 衝突判定用の矩形を取得
     let cRect = getCollisionRect(player);
 
     for (const block of stage.blocks) {
-        // (略) collision===2や1の考慮は同じ
+        if (block.collision === 2) continue;  // すり抜け等の場合
 
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        // プレイヤー当たり判定の位置/サイズで衝突検出
+        // cRect でチェック (width/h は小さい衝突判定サイズ)
         if (checkCollision(cRect.x, cRect.y, cRect.w, cRect.h, bx, by, BLOCK_SIZE)) {
+            // 例えばブロックが「即死トラップ (kind===4)」なら処理
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
             }
+            // block.collision===1 (上のみ) は横から衝突しないなどの条件は省略
+
+            // どちらの方向から衝突したか
             if (player.dx > 0) {
-                player.x = bx - player.collisionWidth;
+                // 右へ進んでブロックに衝突した場合
+                //  → 「衝突判定ボックスの右端 = ブロックの左端」
+                cRect.x = bx - cRect.w;
             } else if (player.dx < 0) {
-                player.x = bx + BLOCK_SIZE;
+                // 左へ進んで衝突
+                //  → 「衝突判定ボックスの左端 = ブロックの右端」
+                cRect.x = bx + BLOCK_SIZE;
             }
+
+            // cRect を補正したので、player座標へ反映
+            setCollisionRect(player, cRect);
+
+            // 衝突したので速度をゼロに (滑らない場合)
             player.dx = 0;
         }
     }
 
-    // 垂直移動
+    //========== 垂直移動 ==========//
     player.y += player.dy;
     player.onGround = false;
 
-    // 再度 cRect を計算
+    // 再取得 (player.x, player.y が更新された可能性があるので)
     cRect = getCollisionRect(player);
 
     for (const block of stage.blocks) {
+        if (block.collision === 2) continue;
+
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
@@ -74,19 +89,29 @@ function handleCollisions() {
                 return;
             }
 
+            // block.collision===1 (上のみ衝突) なら、下からぶつかるときのみ有効
             if (block.collision === 1 && player.dy < 0) {
+                // 上向きジャンプ時は貫通させるなら continue
                 continue;
             }
 
+            // 衝突方向によって cRect を補正
             if (player.dy > 0) {
-                player.y = by - player.collisionHeight;
+                // 下向き(＝上から着地)
+                //  → 「cRect の下端 = ブロックの上端」
+                cRect.y = by - cRect.h;
                 player.dy = 0;
                 player.onGround = true;
-                canDoubleJump = true;
+                canDoubleJump = true;  // 二段ジャンプ解除など
             } else if (player.dy < 0) {
-                player.y = by + BLOCK_SIZE;
+                // 上向き(＝天井に頭をぶつけた)
+                //  → 「cRect の上端 = ブロックの下端」
+                cRect.y = by + BLOCK_SIZE;
                 player.dy = 0;
             }
+
+            // cRect を補正後、プレイヤーに反映
+            setCollisionRect(player, cRect);
         }
     }
 }
