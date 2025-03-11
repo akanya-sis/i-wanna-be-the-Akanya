@@ -12,17 +12,26 @@ function handleCollisions() {
     // 水平移動
     player.x += player.dx;
 
+    // 当たり判定用の座標を計算
+    const collisionX = player.x + (player.width - player.collisionWidth) / 2;
+    const collisionY = player.y + (player.height - player.collisionHeight) / 2;
+
     for (const block of stage.blocks) {
-        if (block.collision === 2) continue;
-        if (block.collision === 1) {
-            // 上のみ
-            continue;
-        }
+        // (略) collision===2や1の考慮は同じ
 
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
+        // プレイヤー当たり判定の位置/サイズで衝突検出
+        if (checkCollision(
+            collisionX, 
+            collisionY, 
+            player.collisionWidth, 
+            player.collisionHeight,
+            bx, 
+            by, 
+            BLOCK_SIZE
+        )) {
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
@@ -39,14 +48,22 @@ function handleCollisions() {
     // 垂直移動
     player.y += player.dy;
     player.onGround = false;
+    const cX2 = player.x + (player.width - player.collisionWidth) / 2;
+    const cY2 = player.y + (player.height - player.collisionHeight) / 2;
 
     for (const block of stage.blocks) {
-        if (block.collision === 2) continue;
-
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
+        if (checkCollision(
+            cX2, 
+            cY2, 
+            player.collisionWidth, 
+            player.collisionHeight,
+            bx, 
+            by,
+            BLOCK_SIZE
+        )) {
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
