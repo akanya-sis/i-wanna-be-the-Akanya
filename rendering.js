@@ -90,7 +90,7 @@ function draw() {
                     SPRITE_FRAME_WIDTH,
                     SPRITE_FRAME_HEIGHT,
                     player.x,
-                    player.y,
+                    player.y - 1,
                     player.width,
                     player.height
                 );
