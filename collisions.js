@@ -37,7 +37,7 @@ function handleCollisions() {
                 return;
             }
             if (player.dx > 0) {
-                player.x = bx - player.width;
+                player.x = bx - player.collisionWidth;
             } else if (player.dx < 0) {
                 player.x = bx + BLOCK_SIZE;
             }
@@ -74,7 +74,7 @@ function handleCollisions() {
             }
 
             if (player.dy > 0) {
-                player.y = by - player.height;
+                player.y = by - player.collisionHeight;
                 player.dy = 0;
                 player.onGround = true;
                 canDoubleJump = true;
