@@ -213,7 +213,7 @@ function handleCollisions() {
 
     // AABB座標再計算
     let px2 = (player.x + player.width / 2) - 8;
-    let py2 = (player.y + player.height / 2) - 8;
+    let py2 = (player.y + player.height / 2);
     cx = px2 + 8;
     cy = py2 + 8;
 
