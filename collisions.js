@@ -22,7 +22,7 @@ function handleCollisions() {
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        if (checkCollision(player.x, player.y, player.width/2, player.height/2, bx, by, BLOCK_SIZE)) {
+        if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
@@ -46,7 +46,7 @@ function handleCollisions() {
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        if (checkCollision(player.x, player.y, player.width/2, player.height/2, bx, by, BLOCK_SIZE)) {
+        if (checkCollision(player.x, player.y, player.width, player.height, bx, by, BLOCK_SIZE)) {
             if (block.kind === 4) {
                 triggerDeathEffect();
                 return;
