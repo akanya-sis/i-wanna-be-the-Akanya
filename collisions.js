@@ -1,4 +1,6 @@
+//
 // 当たり判定用の矩形を取得
+//
 function getCollisionRect(player) {
     const offsetX = (player.width - player.collisionWidth) / 2;
     const offsetY = (player.height - player.collisionHeight);
@@ -10,7 +12,9 @@ function getCollisionRect(player) {
     };
 }
 
+//
 // 当たり判定用矩形からプレイヤーの座標に反映
+//
 function setCollisionRect(player, rect) {
     const offsetX = (player.width - player.collisionWidth) / 2;
     const offsetY = (player.height - player.collisionHeight);
@@ -19,7 +23,9 @@ function setCollisionRect(player, rect) {
     player.y = rect.y - offsetY;
 }
 
-// AABB collision check
+//
+// AABB collision check (旧: 矩形同士の衝突判定用)
+//
 function checkCollision(px, py, pw, ph, bx, by, bs) {
     return (
         px < bx + bs &&
@@ -29,12 +35,122 @@ function checkCollision(px, py, pw, ph, bx, by, bs) {
     );
 }
 
+//
+// [追加] 円 vs 矩形の衝突判定
+//
+function circleRectCollision(cx, cy, r, rx, ry, rw, rh) {
+    const closestX = Math.max(rx, Math.min(cx, rx + rw));
+    const closestY = Math.max(ry, Math.min(cy, ry + rh));
+    const distX = cx - closestX;
+    const distY = cy - closestY;
+    return (distX * distX + distY * distY) < (r * r);
+}
+
+//
+// [追加] 線分と点の距離^2 (円 vs 三角形 の補助)
+//
+function pointLineSegmentDistSq(px, py, x1, y1, x2, y2) {
+    const vx = x2 - x1;
+    const vy = y2 - y1;
+    const lenSq = vx*vx + vy*vy;
+    let t = ((px - x1) * vx + (py - y1) * vy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const nx = x1 + vx * t;
+    const ny = y1 + vy * t;
+    const dx = px - nx;
+    const dy = py - ny;
+    return dx*dx + dy*dy;
+}
+
+//
+// [追加] 三角形(A,B,C)の面積
+//
+function triArea(ax, ay, bx, by, cx, cy) {
+    return Math.abs((ax*(by-cy) + bx*(cy-ay) + cx*(ay-by)) / 2);
+}
+
+//
+// [追加] 点(px, py)が三角形ABC内にあるかどうか
+//
+function pointInTriangle(px, py, ax, ay, bx, by, cx, cy) {
+    const area  = triArea(ax, ay, bx, by, cx, cy);
+    const area1 = triArea(px, py, bx, by, cx, cy);
+    const area2 = triArea(ax, ay, px, py, cx, cy);
+    const area3 = triArea(ax, ay, bx, by, px, py);
+    return Math.abs(area - (area1 + area2 + area3)) < 0.0001;
+}
+
+//
+// [追加] 円 vs 三角形の衝突判定
+//
+function circleTriangleCollision(cx, cy, r, tri) {
+    const [A, B, C] = tri;
+    const Ax = A[0], Ay = A[1];
+    const Bx = B[0], By = B[1];
+    const Cx = C[0], Cy = C[1];
+
+    const rSq = r * r;
+
+    // 各辺との距離チェック
+    let distSq = pointLineSegmentDistSq(cx, cy, Ax, Ay, Bx, By);
+    if (distSq < rSq) return true;
+    distSq = pointLineSegmentDistSq(cx, cy, Bx, By, Cx, Cy);
+    if (distSq < rSq) return true;
+    distSq = pointLineSegmentDistSq(cx, cy, Cx, Cy, Ax, Ay);
+    if (distSq < rSq) return true;
+
+    // 中心が三角形内部の場合
+    if (pointInTriangle(cx, cy, Ax, Ay, Bx, By, Cx, Cy)) {
+        return true;
+    }
+    return false;
+}
+
+//
+// [追加] 底辺16px,高さ16pxの三角形頂点を取得
+// collision==11:△ (上), 12:▷ (右), 13:▽ (下), 14:◁ (左)
+//
+function getTriangleVertices(bx, by, collision) {
+    switch(collision) {
+        case 11: // △ (上向き)
+            return [
+                [bx,     by+16],
+                [bx+16,  by+16],
+                [bx+8,   by]
+            ];
+        case 12: // ▷ (右向き)
+            return [
+                [bx,     by],
+                [bx,     by+16],
+                [bx+16,  by+8]
+            ];
+        case 13: // ▽ (下向き)
+            return [
+                [bx,     by],
+                [bx+16,  by],
+                [bx+8,   by+16]
+            ];
+        case 14: // ◁ (左向き)
+            return [
+                [bx+16,  by],
+                [bx+16,  by+16],
+                [bx,     by+8]
+            ];
+    }
+    return [];
+}
+
+//
+// プレイヤー vs ブロックの衝突処理 (円形の当たり判定 + 三角形対応)
+//
 function handleCollisions() {
     //========== 水平移動 ==========//
     player.x += player.dx;
 
-    // 衝突判定用の矩形を取得
-    let cRect = getCollisionRect(player);
+    // プレイヤーの円心と半径 (半径8px, 中心はプレイヤーの画像中央あたり)
+    let centerX = player.x + player.width / 2;
+    let centerY = player.y + player.height / 2;
+    const r = 8;  // 半径8px
 
     for (const block of stage.blocks) {
         if (block.collision === 2) continue;  // すり抜け等の場合
@@ -42,31 +158,45 @@ function handleCollisions() {
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        // cRect でチェック (width/h は小さい衝突判定サイズ)
-        if (checkCollision(cRect.x, cRect.y, cRect.w, cRect.h, bx, by, BLOCK_SIZE)) {
-            // 例えばブロックが「即死トラップ (kind===4)」なら処理
-            if (block.kind === 4) {
+        // 三角形スパイク系
+        if (
+            block.collision === 11 ||
+            block.collision === 12 ||
+            block.collision === 13 ||
+            block.collision === 14
+        ) {
+            const tri = getTriangleVertices(bx, by, block.collision);
+            if (circleTriangleCollision(centerX, centerY, r, tri)) {
+                // 即死ブロック(例: kind===4)の処理を踏襲
+                if (block.kind === 4) {
+                    triggerDeathEffect();
+                    return;
+                }
+                // 三角形が通常床などの場合はここで押し戻し等を書く
+                // (本例では即死と同じ扱いにするなら上記のように return)
                 triggerDeathEffect();
                 return;
             }
-            // block.collision===1 (上のみ) は横から衝突しないなどの条件は省略
+        } else {
+            // 通常ブロックなど (円 vs 矩形)
+            if (circleRectCollision(centerX, centerY, r, bx, by, BLOCK_SIZE, BLOCK_SIZE)) {
+                // 例えば「即死ブロック(kind===4)」なら処理
+                if (block.kind === 4) {
+                    triggerDeathEffect();
+                    return;
+                }
+                // block.collision===1 (上のみ) 等、細かい仕様は適宜
+                // 簡易的に「どちらの方向から衝突したか」を AABB風に押し戻す
 
-            // どちらの方向から衝突したか
-            if (player.dx > 0) {
-                // 右へ進んでブロックに衝突した場合
-                //  → 「衝突判定ボックスの右端 = ブロックの左端」
-                cRect.x = bx - cRect.w;
-            } else if (player.dx < 0) {
-                // 左へ進んで衝突
-                //  → 「衝突判定ボックスの左端 = ブロックの右端」
-                cRect.x = bx + BLOCK_SIZE;
+                if (player.dx > 0) {
+                    // 右へ進んで衝突
+                    player.x = bx - (player.width / 2);
+                } else if (player.dx < 0) {
+                    // 左へ進んで衝突
+                    player.x = bx + BLOCK_SIZE - (player.width / 2);
+                }
+                player.dx = 0;
             }
-
-            // cRect を補正したので、player座標へ反映
-            setCollisionRect(player, cRect);
-
-            // 衝突したので速度をゼロに (滑らない場合)
-            player.dx = 0;
         }
     }
 
@@ -74,8 +204,9 @@ function handleCollisions() {
     player.y += player.dy;
     player.onGround = false;
 
-    // 再取得 (player.x, player.y が更新された可能性があるので)
-    cRect = getCollisionRect(player);
+    // 移動後に再計算
+    centerX = player.x + player.width / 2;
+    centerY = player.y + player.height / 2;
 
     for (const block of stage.blocks) {
         if (block.collision === 2) continue;
@@ -83,39 +214,47 @@ function handleCollisions() {
         const bx = block.x * BLOCK_SIZE;
         const by = canvas.height - (block.y + 1) * BLOCK_SIZE;
 
-        if (checkCollision(cRect.x, cRect.y, cRect.w, cRect.h, bx, by, BLOCK_SIZE)) {
-            if (block.kind === 4) {
+        if (
+            block.collision === 11 ||
+            block.collision === 12 ||
+            block.collision === 13 ||
+            block.collision === 14
+        ) {
+            const tri = getTriangleVertices(bx, by, block.collision);
+            if (circleTriangleCollision(centerX, centerY, r, tri)) {
+                if (block.kind === 4) {
+                    triggerDeathEffect();
+                    return;
+                }
                 triggerDeathEffect();
                 return;
             }
-
-            // block.collision===1 (上のみ衝突) なら、下からぶつかるときのみ有効
-            if (block.collision === 1 && player.dy < 0) {
-                // 上向きジャンプ時は貫通させるなら continue
-                continue;
+        } else {
+            if (circleRectCollision(centerX, centerY, r, bx, by, BLOCK_SIZE, BLOCK_SIZE)) {
+                if (block.kind === 4) {
+                    triggerDeathEffect();
+                    return;
+                }
+                // block.collision===1 (上のみ衝突) などは適宜
+                if (player.dy > 0) {
+                    // 下向き(=上から着地)
+                    player.y = by - (player.height / 2);
+                    player.dy = 0;
+                    player.onGround = true;
+                    canDoubleJump = true;
+                } else if (player.dy < 0) {
+                    // 上向き(=天井)
+                    player.y = by + BLOCK_SIZE - (player.height / 2);
+                    player.dy = 0;
+                }
             }
-
-            // 衝突方向によって cRect を補正
-            if (player.dy > 0) {
-                // 下向き(＝上から着地)
-                //  → 「cRect の下端 = ブロックの上端」
-                cRect.y = by - cRect.h;
-                player.dy = 0;
-                player.onGround = true;
-                canDoubleJump = true;  // 二段ジャンプ解除など
-            } else if (player.dy < 0) {
-                // 上向き(＝天井に頭をぶつけた)
-                //  → 「cRect の上端 = ブロックの下端」
-                cRect.y = by + BLOCK_SIZE;
-                player.dy = 0;
-            }
-
-            // cRect を補正後、プレイヤーに反映
-            setCollisionRect(player, cRect);
         }
     }
 }
 
+//
+// パーティクルの衝突処理はそのまま
+//
 function handleParticleCollisions(p) {
     // 水平
     p.x += p.dx;
@@ -161,6 +300,9 @@ function handleParticleCollisions(p) {
     }
 }
 
+//
+// パーティクル同士の衝突処理はそのまま
+//
 function handleParticleInterCollision() {
     for (let i = 0; i < deathParticles.length; i++) {
         for (let j = i + 1; j < deathParticles.length; j++) {
