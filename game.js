@@ -140,6 +140,7 @@ const stage = {
         {kind:1,x:60,y:4,collision:0},
         {kind:1,x:61,y:4,collision:0},
         {kind:1,x:62,y:4,collision:0},
+        {kind:14,x:62,y:6,collision:14},
         {kind:1,x:63,y:4,collision:0},
         {kind:1,x:63,y:5,collision:0},
         {kind:1,x:63,y:6,collision:0},
