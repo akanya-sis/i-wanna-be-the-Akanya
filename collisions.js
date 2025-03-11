@@ -147,9 +147,11 @@ function handleCollisions() {
     //========== 水平移動 ==========//
     player.x += player.dx;
 
-    // プレイヤーの円心と半径 (半径8px, 中心はプレイヤーの画像中央あたり)
+    // プレイヤーの円心と半径
+    //  - X座標は幅の中央
+    //  - Y座標は「画像下端 - 半径8」付近
     let centerX = player.x + player.width / 2;
-    let centerY = player.y + player.height / 2;
+    let centerY = player.y + player.height - 8;
     const r = 8;  // 半径8px
 
     for (const block of stage.blocks) {
@@ -172,8 +174,6 @@ function handleCollisions() {
                     triggerDeathEffect();
                     return;
                 }
-                // 三角形が通常床などの場合はここで押し戻し等を書く
-                // (本例では即死と同じ扱いにするなら上記のように return)
                 triggerDeathEffect();
                 return;
             }
@@ -185,14 +185,13 @@ function handleCollisions() {
                     triggerDeathEffect();
                     return;
                 }
-                // block.collision===1 (上のみ) 等、細かい仕様は適宜
-                // 簡易的に「どちらの方向から衝突したか」を AABB風に押し戻す
 
+                // 簡易的に押し戻し
                 if (player.dx > 0) {
-                    // 右へ進んで衝突
+                    // 右から衝突
                     player.x = bx - (player.width / 2);
                 } else if (player.dx < 0) {
-                    // 左へ進んで衝突
+                    // 左から衝突
                     player.x = bx + BLOCK_SIZE - (player.width / 2);
                 }
                 player.dx = 0;
@@ -206,7 +205,7 @@ function handleCollisions() {
 
     // 移動後に再計算
     centerX = player.x + player.width / 2;
-    centerY = player.y + player.height / 2;
+    centerY = player.y + player.height - 8;
 
     for (const block of stage.blocks) {
         if (block.collision === 2) continue;
@@ -235,16 +234,15 @@ function handleCollisions() {
                     triggerDeathEffect();
                     return;
                 }
-                // block.collision===1 (上のみ衝突) などは適宜
                 if (player.dy > 0) {
                     // 下向き(=上から着地)
-                    player.y = by - (player.height / 2);
+                    player.y = by - (player.height - 8); // 底に合わせるよう調整
                     player.dy = 0;
                     player.onGround = true;
                     canDoubleJump = true;
                 } else if (player.dy < 0) {
                     // 上向き(=天井)
-                    player.y = by + BLOCK_SIZE - (player.height / 2);
+                    player.y = by + BLOCK_SIZE - (player.height - 8);
                     player.dy = 0;
                 }
             }
@@ -253,7 +251,7 @@ function handleCollisions() {
 }
 
 //
-// パーティクルの衝突処理はそのまま
+// パーティクル衝突処理 (変更なし)
 //
 function handleParticleCollisions(p) {
     // 水平
@@ -301,7 +299,7 @@ function handleParticleCollisions(p) {
 }
 
 //
-// パーティクル同士の衝突処理はそのまま
+// パーティクル同士の衝突処理 (変更なし)
 //
 function handleParticleInterCollision() {
     for (let i = 0; i < deathParticles.length; i++) {
