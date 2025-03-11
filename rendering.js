@@ -69,7 +69,7 @@ function draw() {
             if (player.facingLeft) {
                 // 左向きに反転
                 // 原点を (player.x + player.width, player.y) に移動し、X軸反転
-                ctx.translate(player.x + player.width, player.y);
+                ctx.translate(player.x + player.width, player.y + 1);
                 ctx.scale(-1, 1);
 
                 // 反転した座標系で描画先 (0,0) に描画
@@ -90,7 +90,7 @@ function draw() {
                     SPRITE_FRAME_WIDTH,
                     SPRITE_FRAME_HEIGHT,
                     player.x,
-                    player.y - 1,
+                    player.y + 1,
                     player.width,
                     player.height
                 );
