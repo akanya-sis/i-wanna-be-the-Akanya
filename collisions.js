@@ -153,7 +153,7 @@ function handleCollisions() {
 
     // 衝突判定用AABBの左上座標(px, py)と幅、高さ(16×16)
     let px = (player.x + player.width / 2) - 8;
-    let py = (player.y + player.height / 2);
+    let py = (player.y + player.height / 2) - 8;
     const pw = 16;
     const ph = 16;
 
@@ -202,7 +202,7 @@ function handleCollisions() {
                 player.dx = 0;
                 // AABB座標からplayerへ反映
                 player.x = px + 8 - (player.width / 2);
-                player.y = py - (player.height / 2);
+                player.y = py + 8 - (player.height / 2);
             }
         }
     }
@@ -213,7 +213,7 @@ function handleCollisions() {
 
     // AABB座標再計算
     let px2 = (player.x + player.width / 2) - 8;
-    let py2 = (player.y + player.height / 2);
+    let py2 = (player.y + player.height / 2) - 8;
     cx = px2 + 8;
     cy = py2 + 8;
 
@@ -246,6 +246,10 @@ function handleCollisions() {
                     triggerDeathEffect();
                     return;
                 }
+                // collision==1 (上のみ衝突) => 下からのジャンプ時はすり抜け
+                if (block.collision === 1 && player.dy < 0) {
+                    continue;
+                }
                 // 縦押し戻し
                 if (player.dy > 0) {
                     py2 = by - ph; 
@@ -258,7 +262,7 @@ function handleCollisions() {
                 }
                 // AABB座標からplayerへ反映
                 player.x = px2 + 8 - (player.width / 2);
-                player.y = py2 - (player.height / 2);
+                player.y = py2 + 8 - (player.height / 2);
             }
         }
     }
