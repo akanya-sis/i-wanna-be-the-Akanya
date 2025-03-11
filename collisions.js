@@ -201,7 +201,7 @@ function handleCollisions() {
                 }
                 player.dx = 0;
                 // AABB座標からplayerへ反映
-                player.x = px - (player.width / 2);
+                player.x = px + 8 - (player.width / 2);
                 player.y = py - (player.height / 2);
             }
         }
@@ -257,7 +257,7 @@ function handleCollisions() {
                     player.dy = 0;
                 }
                 // AABB座標からplayerへ反映
-                player.x = px2 - (player.width / 2);
+                player.x = px2 + 8 - (player.width / 2);
                 player.y = py2 - (player.height / 2);
             }
         }
