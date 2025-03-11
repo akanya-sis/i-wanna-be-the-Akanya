@@ -153,7 +153,7 @@ function handleCollisions() {
 
     // 衝突判定用AABBの左上座標(px, py)と幅、高さ(16×16)
     let px = (player.x + player.width / 2) - 8;
-    let py = (player.y + player.height / 2) - 8;
+    let py = (player.y + player.height / 2);
     const pw = 16;
     const ph = 16;
 
