@@ -62,23 +62,19 @@ function draw() {
             // 左向き or 右向きの判定
             // 画像は左向きなので、右向き移動時は反転描画
 
-            // (A) 左向き (facingLeft=true)
-            // (B) 右向き (facingLeft=false) -> ctx.scale(-1,1)
-
             ctx.save(); // コンテキスト状態を保存
             if (player.facingLeft) {
                 // 左向きに反転
-                // 原点を (player.x + player.width, player.y) に移動し、X軸反転
                 ctx.translate(player.x + player.width, player.y + 1);
                 ctx.scale(-1, 1);
 
                 // 反転した座標系で描画先 (0,0) に描画
                 ctx.drawImage(
                     playerImage,
-                    sx, sy, // 切り出し開始
+                    sx, sy,
                     SPRITE_FRAME_WIDTH,
                     SPRITE_FRAME_HEIGHT,
-                    0, 0,   // 反転後の描画先
+                    0, 0,
                     player.width,
                     player.height
                 );
@@ -103,12 +99,15 @@ function draw() {
             ctx.fillRect(player.x, player.y, player.width, player.height);
         }
 
-        // [追加] デバッグモード時だけ、プレイヤーの円形当たり判定を描画
+        // [追加] デバッグモード時だけ、プレイヤーの円形当たり判定(足元側)を描画
         if (debugMode) {
+            // 「足元寄り」に配置された中心
             const cx = player.x + player.width / 2;
-            const cy = player.y + player.height / 2;
+            const cy = player.y + player.height - 8;
+            const r = 8;
+
             ctx.beginPath();
-            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
             ctx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
             ctx.lineWidth = 2;
             ctx.stroke();
