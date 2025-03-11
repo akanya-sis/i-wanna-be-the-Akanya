@@ -1,7 +1,7 @@
 // 当たり判定用の矩形を取得
 function getCollisionRect(player) {
     const offsetX = (player.width - player.collisionWidth) / 2;
-    const offsetY = (player.height - player.collisionHeight);
+    const offsetY = (player.height - player.collisionHeight) - 1;
     return {
         x: player.x + offsetX,
         y: player.y + offsetY,
