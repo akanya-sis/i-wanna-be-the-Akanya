@@ -189,6 +189,11 @@ function handleCollisions() {
         } else {
             // 通常ブロックはAABB同士の衝突チェック
             if (checkCollision(px, py, pw, ph, bx, by, BLOCK_SIZE)) {
+                // collision==1 (上のみ衝突) => 下からのジャンプ時はすり抜け
+                if (block.collision === 1 && player.dy < 0) {
+                    continue;
+                }
+
                 if (block.kind === 4) {
                     triggerDeathEffect();
                     return;
