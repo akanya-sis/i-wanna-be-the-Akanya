@@ -141,7 +141,7 @@ function draw() {
         }
 
         // [追加] デバッグモード時だけ、プレイヤーの円形当たり判定(足元側)を描画
-        if (debugMode) {
+/*        if (debugMode) {
             // 「足元寄り」に配置された中心
             const cx = player.x + player.width / 2;
             const cy = player.y + player.height - 8;
@@ -153,6 +153,7 @@ function draw() {
             ctx.lineWidth = 2;
             ctx.stroke();
         }
+*/
     }
 
     // パーティクル
