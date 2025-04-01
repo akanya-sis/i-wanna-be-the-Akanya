@@ -103,20 +103,6 @@ const stage = {
         {kind:1,x:0,y:38,collision:0},
         {kind:1,x:0,y:39,collision:0},
         {kind:1,x:0,y:40,collision:0},
-
-        {kind:14,x:1,y:15,collision:14},
-        {kind:14,x:1,y:16,collision:14},
-        {kind:14,x:1,y:17,collision:14},
-        {kind:14,x:1,y:18,collision:14},
-        {kind:14,x:1,y:19,collision:14},
-        {kind:14,x:1,y:20,collision:14},
-        {kind:14,x:1,y:21,collision:14},
-        {kind:14,x:1,y:22,collision:14},
-        {kind:14,x:1,y:23,collision:14},
-        {kind:14,x:1,y:24,collision:14},
-        {kind:14,x:1,y:25,collision:14},
-        {kind:14,x:1,y:26,collision:14},
-        {kind:14,x:1,y:27,collision:14},
         
         //右壁
         {kind:1,x:63,y:1,collision:0},
@@ -241,6 +227,20 @@ const stage = {
         {kind:14,x:62,y:12,collision:14},
         {kind:14,x:62,y:13,collision:14},
 
+        {kind:15,x:1,y:15,collision:15},
+        {kind:16,x:1,y:16,collision:16},
+        {kind:17,x:1,y:17,collision:17},
+        {kind:18,x:1,y:18,collision:18},
+        {kind:14,x:1,y:19,collision:14},
+        {kind:14,x:1,y:20,collision:14},
+        {kind:14,x:1,y:21,collision:14},
+        {kind:14,x:1,y:22,collision:14},
+        {kind:14,x:1,y:23,collision:14},
+        {kind:14,x:1,y:24,collision:14},
+        {kind:14,x:1,y:25,collision:14},
+        {kind:14,x:1,y:26,collision:14},
+        {kind:14,x:1,y:27,collision:14},
+        
         // 初段
         {kind:1,x:0,y:7,collision:0},
         {kind:1,x:1,y:7,collision:0},
